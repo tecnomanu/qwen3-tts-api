@@ -28,6 +28,21 @@ module.exports = {
     h.sendJson(res, 200, await engine.bridge.listModels());
   },
 
+  // model install status (for the panel)
+  'GET /api/models': async (ctx, engine, req, res, h) => {
+    const { listModels } = require('../../core/modelStatus');
+    let inMemory = [];
+    if (await engine.isUp()) {
+      try {
+        const m = await engine.bridge.listModels();
+        inMemory = (m.data || []).map((x) => x.id);
+      } catch {
+        /* ignore */
+      }
+    }
+    h.sendJson(res, 200, { models: listModels(ctx.config.all(), ctx.paths.modelsDir, inMemory) });
+  },
+
   // --- management (panel) ---
   'GET /api/status': async (ctx, engine, req, res, h) => {
     const cfg = ctx.config.all();

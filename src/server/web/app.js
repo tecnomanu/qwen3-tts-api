@@ -26,17 +26,41 @@ async function refresh() {
     $('status').innerHTML =
       `engine: <b>${up ? 'up' : 'down'}</b> · backend: <b>${s.engine.backend}</b><br>` +
       `host: <b>${s.host}:${s.port}</b> · protected: <b>${s.protected ? 'yes' : 'no'}</b>`;
-    $('models').innerHTML = Object.entries(s.models)
-      .filter(([k]) => k !== 'defaultRole')
-      .map(([k, v]) => `${k}: <b>${v}</b>`).join('<br>');
     $('foot').textContent = `${s.brand} · backend ${s.engine.backend}`;
   } catch (e) {
     $('status').innerHTML = `<span style="color:#ff6b6b">error: ${e.message}</span>`;
   }
+  renderModels();
   try {
     const c = await (await api('/api/config')).json();
     $('config').textContent = JSON.stringify(c, null, 2);
   } catch { /* ignore */ }
+}
+
+const BADGE = {
+  installed: ['✅', 'installed', '#7ef0c2'],
+  cached: ['☁️', 'cached', '#6ea8fe'],
+  not_installed: ['⬇️', 'not installed', '#8b93a7'],
+};
+
+async function renderModels() {
+  try {
+    const { models } = await (await api('/api/models')).json();
+    $('models').innerHTML = models
+      .map((m) => {
+        const [icon, text, color] = BADGE[m.state] || BADGE.not_installed;
+        const size = m.sizeMB ? ` · ${m.sizeMB} MB` : '';
+        const loaded = m.loaded ? ' <span class="loaded">loaded</span>' : '';
+        return `<div class="model">
+          <div class="model-top"><b>${m.role}</b>
+            <span class="badge" style="color:${color};border-color:${color}33">${icon} ${text}${loaded}</span></div>
+          <div class="model-id">${m.id}${size}</div>
+        </div>`;
+      })
+      .join('');
+  } catch (e) {
+    $('models').innerHTML = `<span class="muted">${e.message}</span>`;
+  }
 }
 
 // emotion/style chips -> fill the instruct field
