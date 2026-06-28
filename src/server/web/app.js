@@ -39,6 +39,14 @@ async function refresh() {
   } catch { /* ignore */ }
 }
 
+// emotion/style chips -> fill the instruct field
+$('chips').addEventListener('click', (e) => {
+  const chip = e.target.closest('.chip');
+  if (!chip) return;
+  $('instruct').value = chip.dataset.i;
+  $('instruct').focus();
+});
+
 $('savekey').onclick = () => {
   localStorage.setItem(KEY_STORE, $('apikey').value.trim());
   refresh();
