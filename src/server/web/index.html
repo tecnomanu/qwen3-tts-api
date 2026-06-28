@@ -18,13 +18,8 @@
   </header>
 
   <main>
-    <section class="card" id="status-card">
-      <h2>Status</h2>
-      <div id="status" class="kv">loading…</div>
-      <button id="restart" class="ghost small">restart engine</button>
-    </section>
-
-    <section class="card" id="test-card">
+    <!-- main column: voice testing -->
+    <section class="card main-col" id="test-card">
       <h2>Test voice</h2>
       <textarea id="text" rows="3" placeholder="Type something to hear…">Hi there, this is a quick voice engine test.</textarea>
       <div class="row">
@@ -69,16 +64,25 @@
       <audio id="player" controls></audio>
     </section>
 
-    <section class="card" id="models-card">
-      <h2>Models</h2>
-      <div id="models" class="kv">—</div>
-    </section>
+    <!-- sidebar: status, models, config -->
+    <aside class="side">
+      <section class="card" id="status-card">
+        <h2>Status</h2>
+        <div id="status" class="kv">loading…</div>
+        <button id="restart" class="ghost small">restart engine</button>
+      </section>
 
-    <section class="card" id="config-card">
-      <h2>Configuration</h2>
-      <pre id="config">—</pre>
-      <p class="muted">Edit from the terminal: <code>qvox config set &lt;path&gt; &lt;value&gt;</code></p>
-    </section>
+      <section class="card" id="models-card">
+        <h2>Models</h2>
+        <div id="models" class="kv">—</div>
+      </section>
+
+      <section class="card" id="config-card">
+        <h2>Configuration</h2>
+        <pre id="config">—</pre>
+        <p class="muted">Edit from the terminal: <code>qvox config set &lt;path&gt; &lt;value&gt;</code></p>
+      </section>
+    </aside>
   </main>
 
   <footer>QVox · localhost — <span id="foot"></span></footer>
