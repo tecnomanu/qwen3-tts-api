@@ -21,7 +21,19 @@
     <!-- main column: voice testing -->
     <section class="card main-col" id="test-card">
       <h2>Test voice</h2>
-      <textarea id="text" rows="3" placeholder="Type something to hear…">Hi there, this is a quick voice engine test.</textarea>
+      <textarea id="text" rows="3" placeholder="Type text. Insert [emotion] tags to change feeling mid-audio…">[laughing] Ha, ha, ha, this is amazing! [sad] But sometimes things just don't work out. [excited] And then, it all came together!</textarea>
+      <div class="chips-label">Insert emotion tag (applies until the next tag):</div>
+      <div class="chips" id="chips">
+        <button type="button" class="chip" data-tag="laughing">😂 laughing</button>
+        <button type="button" class="chip" data-tag="happy">😄 happy</button>
+        <button type="button" class="chip" data-tag="sad">😢 sad</button>
+        <button type="button" class="chip" data-tag="crying">😭 crying</button>
+        <button type="button" class="chip" data-tag="excited">⚡ excited</button>
+        <button type="button" class="chip" data-tag="angry">😠 angry</button>
+        <button type="button" class="chip" data-tag="whisper">🤫 whisper</button>
+        <button type="button" class="chip" data-tag="calm">😌 calm</button>
+        <button type="button" class="chip" data-tag="narrator">🎙️ narrator</button>
+      </div>
       <div class="row">
         <label class="grow">Language
           <select id="lang">
@@ -40,26 +52,16 @@
         <label>Temp <input id="temp" type="number" step="0.1" value="0.7" /></label>
       </div>
       <div class="row">
-        <label class="grow">Instruct (voice description — controls emotion/laughs, English works best)
-          <input id="instruct" placeholder="A warm Argentine man, Buenos Aires accent" /></label>
+        <label class="grow">Base voice (system prompt — kept across the whole audio, English works best)
+          <input id="instruct" value="A warm Argentine man, Buenos Aires accent" /></label>
       </div>
-      <div class="chips" id="chips">
-        <button type="button" class="chip" data-i="A cheerful, upbeat voice">😄 Cheerful</button>
-        <button type="button" class="chip" data-i="Speaking happily with genuine laughter">😂 Laughing</button>
-        <button type="button" class="chip" data-i="Whispering softly">🤫 Whisper</button>
-        <button type="button" class="chip" data-i="An excited, energetic voice">⚡ Excited</button>
-        <button type="button" class="chip" data-i="A calm, relaxed voice">😌 Calm</button>
-        <button type="button" class="chip" data-i="A sad, melancholic voice">😢 Sad</button>
-        <button type="button" class="chip" data-i="Speaking in an angry tone">😠 Angry</button>
-        <button type="button" class="chip" data-i="A warm, professional narrator voice">🎙️ Narrator</button>
-        <button type="button" class="chip" data-i="A warm Argentine man, Buenos Aires accent">🇦🇷 Argentine</button>
-      </div>
-      <p class="muted">No inline tags yet — emotion is set via the description. Tip: for laughs, also write "Ha, ha, ha" in the text.</p>
+      <p class="muted">Emotion is set per segment with the [tags] above. The base voice + a fixed seed keep the same voice. Tip: for laughs, also write "Ha, ha, ha" in the text.</p>
       <div class="row">
         <label class="grow">Clone (path to a reference wav, optional)
           <input id="clone" placeholder="/path/to/reference_voice.wav" /></label>
       </div>
       <button id="speak">🔊 Generate</button>
+      <a id="download" class="ghost small" download="qvox-audio.wav" style="display:none">⬇️ Download</a>
       <span id="speak-status" class="muted"></span>
       <audio id="player" controls></audio>
     </section>

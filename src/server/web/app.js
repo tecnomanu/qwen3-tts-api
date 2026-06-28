@@ -63,12 +63,18 @@ async function renderModels() {
   }
 }
 
-// emotion/style chips -> fill the instruct field
+// emotion chips -> insert an [tag] into the text at the cursor
 $('chips').addEventListener('click', (e) => {
   const chip = e.target.closest('.chip');
   if (!chip) return;
-  $('instruct').value = chip.dataset.i;
-  $('instruct').focus();
+  const ta = $('text');
+  const tag = `[${chip.dataset.tag}] `;
+  const s = ta.selectionStart ?? ta.value.length;
+  const end = ta.selectionEnd ?? s;
+  ta.value = ta.value.slice(0, s) + tag + ta.value.slice(end);
+  ta.focus();
+  const pos = s + tag.length;
+  ta.setSelectionRange(pos, pos);
 });
 
 $('savekey').onclick = () => {
@@ -96,8 +102,13 @@ $('speak').onclick = async () => {
   try {
     const res = await api('/v1/audio/speech', { method: 'POST', body: JSON.stringify(body), headers: headers(true) });
     const blob = await res.blob();
-    $('player').src = URL.createObjectURL(blob);
+    const url = URL.createObjectURL(blob);
+    $('player').src = url;
     $('player').play();
+    const dl = $('download');
+    dl.href = url;
+    dl.download = `qvox-${Date.now()}.wav`;
+    dl.style.display = 'inline-block';
     $('speak-status').textContent = `done (${((Date.now() - t0) / 1000).toFixed(1)}s)`;
   } catch (e) {
     $('speak-status').textContent = 'error: ' + e.message;

@@ -58,6 +58,13 @@ button {
 button:hover { filter: brightness(1.08); }
 button.ghost { background: transparent; color: var(--text); border: 1px solid var(--line); }
 button.small { padding: 5px 10px; font-size: 12px; }
+a.ghost {
+  display: inline-block; background: transparent; color: var(--text);
+  border: 1px solid var(--line); border-radius: 8px; padding: 8px 14px;
+  font-size: 13px; font-weight: 600; text-decoration: none; margin: 8px 0 0 8px;
+}
+a.ghost:hover { border-color: var(--accent); color: var(--accent); }
+.chips-label { font-size: 12px; color: var(--muted); margin: 8px 0 2px; }
 .chips { display: flex; flex-wrap: wrap; gap: 6px; margin: 4px 0 2px; }
 .chip {
   background: var(--panel2); color: var(--text); border: 1px solid var(--line);

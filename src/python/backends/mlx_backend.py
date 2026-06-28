@@ -4,6 +4,7 @@ NOTE: cloning is broken in mlx-audio 0.3.0rc1 (speaker_encoder uses channels-fir
 layout vs channels-last convs). Use the torch backend to clone.
 """
 import numpy as np
+import mlx.core as mx
 from mlx_audio.tts.utils import load_model
 from backends.base import TTSBackend
 
@@ -30,12 +31,14 @@ class MlxBackend(TTSBackend):
         return list(self._cache.keys())
 
     def synth(self, text, language="Spanish", instruct=None, clone=None,
-              temperature=0.7, max_tokens=None):
+              temperature=0.7, max_tokens=None, seed=None):
         if clone:
             raise RuntimeError(
                 "Cloning is not supported on the MLX backend (bug in mlx-audio 0.3.0rc1). "
                 "Switch to the torch backend: qvox config set engine.backend torch"
             )
+        if seed is not None:
+            mx.random.seed(int(seed))  # fixed seed -> stable voice across segments
         mt = max_tokens or cap_tokens(text)
         model = self._model("voicedesign")
         results = list(model.generate_voice_design(

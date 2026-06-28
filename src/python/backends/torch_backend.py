@@ -45,7 +45,9 @@ class TorchBackend(TTSBackend):
         return list(self._cache.keys())
 
     def synth(self, text, language="Spanish", instruct=None, clone=None,
-              temperature=0.7, max_tokens=None):
+              temperature=0.7, max_tokens=None, seed=None):
+        if seed is not None:
+            torch.manual_seed(int(seed))  # fixed seed -> stable voice across segments
         lang = (language or "spanish").lower()
         if clone:
             model = self._model("base")
