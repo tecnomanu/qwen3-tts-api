@@ -1,0 +1,42 @@
+{
+  "name": "qwen3-tts-api",
+  "version": "0.1.0",
+  "description": "Servidor/daemon local de TTS (Qwen3-TTS) con voces clonables, panel web y CLI. Comando: qvox.",
+  "keywords": [
+    "tts",
+    "text-to-speech",
+    "qwen3-tts",
+    "voice-cloning",
+    "mlx",
+    "apple-silicon",
+    "spanish-tts",
+    "argentina"
+  ],
+  "homepage": "https://github.com/tecnomanu/qwen3-tts-api",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/tecnomanu/qwen3-tts-api.git"
+  },
+  "license": "MIT",
+  "author": "tecnomanu",
+  "type": "commonjs",
+  "engines": {
+    "node": ">=18"
+  },
+  "bin": {
+    "qvox": "bin/qvox.js"
+  },
+  "files": [
+    "bin/",
+    "src/",
+    "docs/",
+    "README.md",
+    "LICENSE"
+  ],
+  "scripts": {
+    "start": "node bin/qvox.js serve",
+    "test": "node --test test/",
+    "release": "node scripts/release.js"
+  },
+  "dependencies": {}
+}
