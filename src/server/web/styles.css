@@ -22,6 +22,7 @@ header {
   position: sticky; top: 0; z-index: 10;
 }
 .brand { display: flex; align-items: center; gap: 10px; }
+.brand .logo { height: 30px; width: auto; display: block; }
 .brand h1 { font-size: 20px; margin: 0; letter-spacing: .5px; }
 .tag { color: var(--muted); font-size: 13px; }
 .dot { width: 10px; height: 10px; border-radius: 50%; background: var(--muted); box-shadow: 0 0 8px currentColor; }

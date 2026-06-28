@@ -20,7 +20,6 @@ async function api(path, opts = {}) {
 async function refresh() {
   try {
     const s = await (await api('/api/status')).json();
-    $('title').textContent = s.brand || 'QVox';
     document.title = (s.brand || 'QVox') + ' · panel';
     const up = s.engine.up;
     $('dot').className = 'dot ' + (up ? 'up' : 'down');
