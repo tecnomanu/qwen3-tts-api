@@ -6,6 +6,7 @@ out/
 *.wav
 *.mp3
 !assets/*.png
+!assets/*.jpg
 .env
 .venv/
 __pycache__/

@@ -1,6 +1,7 @@
 'use strict';
 /** Manage models: list | download <role|id> | remove <name> | path */
 const fs = require('fs');
+const os = require('os');
 const path = require('path');
 const { spawn } = require('child_process');
 const { EngineManager } = require('../../engine/EngineManager');
@@ -12,6 +13,26 @@ function dirSize(dir) {
     total += e.isDirectory() ? dirSize(p) : fs.statSync(p).size;
   }
   return total;
+}
+
+/** Resolve install status of a model id, checking the qvox dir and the HF cache. */
+function modelStatus(id, modelsDir) {
+  // 1) installed in the qvox models dir
+  const localDir = path.join(modelsDir, id.split('/').pop());
+  if (fs.existsSync(path.join(localDir, 'model.safetensors'))) {
+    return { state: 'installed', icon: '✅', size: dirSize(localDir) };
+  }
+  // 2) present in the HuggingFace hub cache (usable, e.g. by the mlx backend)
+  const hubDir = path.join(
+    os.homedir(), '.cache', 'huggingface', 'hub',
+    'models--' + id.replace(/\//g, '--')
+  );
+  if (fs.existsSync(hubDir)) {
+    let size = 0;
+    try { size = dirSize(hubDir); } catch { /* ignore */ }
+    return { state: 'cached', icon: '☁️ ', size };
+  }
+  return { state: 'not installed', icon: '⬇️ ', size: 0 };
 }
 
 module.exports = async function models(ctx, { positionals }) {
@@ -26,32 +47,32 @@ module.exports = async function models(ctx, { positionals }) {
   }
 
   if (sub === 'list') {
-    // eslint-disable-next-line no-console
-    console.log('Configured roles:');
-    for (const role of ['voicedesign', 'base', 'custom']) {
-      // eslint-disable-next-line no-console
-      console.log(`  ${role.padEnd(12)} ${cfg.models[role]}`);
-    }
-    // eslint-disable-next-line no-console
-    console.log(`\nDownloaded in ${paths.modelsDir}:`);
-    const entries = fs.existsSync(paths.modelsDir)
-      ? fs.readdirSync(paths.modelsDir, { withFileTypes: true }).filter((e) => e.isDirectory())
-      : [];
-    if (!entries.length) console.log('  (none)');
-    for (const e of entries) {
-      const mb = (dirSize(path.join(paths.modelsDir, e.name)) / 1048576).toFixed(0);
-      // eslint-disable-next-line no-console
-      console.log(`  ${e.name.padEnd(28)} ${mb} MB`);
-    }
     const engine = new EngineManager(ctx);
+    let inMemory = [];
     if (await engine.isUp()) {
       try {
         const m = await engine.bridge.listModels();
-        logger.info('loaded in memory: ' + JSON.stringify(m.data ? m.data.map((x) => x.id) : m));
+        inMemory = (m.data || []).map((x) => x.id);
       } catch {
         /* ignore */
       }
     }
+
+    // eslint-disable-next-line no-console
+    console.log(`Models  (dir: ${paths.modelsDir})\n`);
+    // eslint-disable-next-line no-console
+    console.log(`  ${'ROLE'.padEnd(12)}${'STATUS'.padEnd(22)}${'SIZE'.padEnd(9)}MODEL`);
+    for (const role of ['voicedesign', 'base', 'custom']) {
+      const id = cfg.models[role];
+      const st = modelStatus(id, paths.modelsDir);
+      const loaded = inMemory.some((x) => x === id || x.endsWith('/' + id.split('/').pop()));
+      const label = `${st.icon} ${st.state}${loaded ? ' · loaded' : ''}`;
+      const size = st.size ? `${(st.size / 1048576).toFixed(0)}MB` : '-';
+      // eslint-disable-next-line no-console
+      console.log(`  ${role.padEnd(12)}${label.padEnd(22)}${size.padEnd(9)}${id}`);
+    }
+    // eslint-disable-next-line no-console
+    console.log('\n  ✅ installed (qvox dir)   ☁️ cached (HF)   ⬇️ not installed');
     return;
   }
 

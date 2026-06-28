@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="assets/logo.png" alt="QVox" width="360" />
+  <img src="assets/banner.jpg" alt="QVox — OpenAI-compatible API for Qwen3-TTS" width="100%" />
 </p>
 
 # qwen3-tts-api · `qvox`
