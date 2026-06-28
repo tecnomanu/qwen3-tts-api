@@ -1,6 +1,6 @@
 {
   "name": "qwen3-tts-api",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Local TTS server/daemon (Qwen3-TTS) with cloneable voices, web panel and CLI. Command: qvox.",
   "keywords": [
     "tts",
