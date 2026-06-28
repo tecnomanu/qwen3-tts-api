@@ -1,12 +1,12 @@
 'use strict';
-/** Levanta el daemon: motor de inferencia (python) + API/panel (node). */
+/** Start the daemon: inference engine (python) + API/panel (node). */
 const { EngineManager } = require('../../engine/EngineManager');
 const { startServer } = require('../../server/server');
 
 module.exports = async function serve(ctx, { flags }) {
   const { config, logger, brand } = ctx;
 
-  // overrides por flag para esta corrida
+  // per-run flag overrides
   if (flags.host) config.set('host', flags.host);
   if (flags.port) config.set('port', Number(flags.port));
   if (flags['api-key']) config.set('apiKey', flags['api-key']);
@@ -17,21 +17,21 @@ module.exports = async function serve(ctx, { flags }) {
   if (cfg.engine.autostart && !flags['no-engine']) {
     await engine.start();
   } else {
-    logger.warn('engine autostart desactivado (--no-engine o config). El server arranca igual.');
+    logger.warn('engine autostart disabled (--no-engine or config). The server starts anyway.');
   }
 
   const server = await startServer(ctx, { engine });
   const url = `http://${cfg.host}:${cfg.port}`;
-  logger.ok(`${brand.displayName} escuchando en ${url}`);
+  logger.ok(`${brand.displayName} listening on ${url}`);
   logger.info(`Panel:  ${url}/`);
   logger.info(`API:    ${url}/v1/audio/speech`);
   if (!cfg.apiKey && cfg.host !== '127.0.0.1') {
-    logger.warn('⚠️  Estás exponiendo en red SIN api key. Seteá una con: ' + brand.cli + ' config set apiKey <clave>');
+    logger.warn('⚠️  Exposing on the network WITHOUT an api key. Set one with: ' + brand.cli + ' config set apiKey <key>');
   }
 
-  // mantener vivo + apagado limpio
+  // keep alive + clean shutdown
   const shutdown = async (sig) => {
-    logger.info(`\n${sig} recibido, cerrando...`);
+    logger.info(`\n${sig} received, shutting down...`);
     try {
       server.close();
     } catch {

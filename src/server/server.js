@@ -1,9 +1,9 @@
 'use strict';
 /**
- * Servidor HTTP (cero dependencias).
- * - Sirve el panel estático desde src/server/web
- * - Enruta la API (routes/api.js)
- * - Protege /v1/* y /api/* con api key (middleware/auth.js)
+ * HTTP server (zero dependencies).
+ * - Serves the static panel from src/server/web
+ * - Routes the API (routes/api.js)
+ * - Protects /v1/* and /api/* with the api key (middleware/auth.js)
  */
 const http = require('http');
 const fs = require('fs');
@@ -18,6 +18,7 @@ const MIME = {
   '.css': 'text/css; charset=utf-8',
   '.json': 'application/json',
   '.svg': 'image/svg+xml',
+  '.png': 'image/png',
   '.ico': 'image/x-icon',
 };
 
@@ -36,7 +37,7 @@ const helpers = {
         try {
           resolve(s ? JSON.parse(s) : {});
         } catch (e) {
-          reject(new Error('JSON inválido: ' + e.message));
+          reject(new Error('invalid JSON: ' + e.message));
         }
       });
       req.on('error', reject);
@@ -65,7 +66,7 @@ function startServer(ctx, { engine }) {
 
     try {
       if (handler) {
-        // proteger API (todo menos /health) cuando hay api key
+        // protect the API (everything but /health) when an api key is set
         const isProtected = pathOnly.startsWith('/v1/') || pathOnly.startsWith('/api/');
         if (isProtected && !checkAuth(ctx, req, res)) return;
         await handler(ctx, engine, req, res, helpers);

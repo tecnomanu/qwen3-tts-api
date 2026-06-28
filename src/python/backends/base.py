@@ -1,7 +1,7 @@
-"""Interfaz de backend de inferencia (contrato común).
+"""Inference backend interface (common contract).
 
-Cada backend implementa synth(). El resto del motor (app Flask) no sabe si por
-debajo corre MLX, PyTorch o CPU -> inversión de dependencias.
+Each backend implements synth(). The rest of the engine (Flask app) does not know
+whether MLX, PyTorch or CPU runs underneath -> dependency inversion.
 """
 from __future__ import annotations
 import os
@@ -15,7 +15,7 @@ class TTSBackend:
         self.models_dir = models_dir
 
     def resolve(self, role_or_id: str) -> str:
-        """Resuelve un rol ('base') o id a un path local (si existe) o al id remoto."""
+        """Resolve a role ('base') or id to a local path (if present) or the remote id."""
         ident = self.models.get(role_or_id, role_or_id)
         local = os.path.join(self.models_dir, ident.split("/")[-1])
         return local if os.path.isdir(local) else ident
@@ -25,5 +25,5 @@ class TTSBackend:
 
     def synth(self, text, language="Spanish", instruct=None, clone=None,
               temperature=0.7, max_tokens=None):
-        """Devuelve (audio_float32_mono: np.ndarray, sample_rate: int)."""
+        """Return (audio_float32_mono: np.ndarray, sample_rate: int)."""
         raise NotImplementedError

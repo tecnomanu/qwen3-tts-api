@@ -1,26 +1,26 @@
 'use strict';
 /**
- * Router del CLI. Cero dependencias.
- * Uso: qvox <comando> [args] [--flags]
+ * CLI router. Zero dependencies.
+ * Usage: qvox <command> [args] [--flags]
  */
 const { brand } = require('../brand');
 const { createContext } = require('../core/context');
 
 const COMMANDS = {
-  serve: 'Levanta el daemon (API + panel web) y el motor de inferencia',
-  speak: 'Genera audio desde texto: qvox speak "Hola" --voice aiden --out demo.wav',
-  setup: 'Asistente inicial: crea config y carpetas, verifica dependencias',
-  status: 'Muestra estado del daemon y del motor',
-  stop: 'Detiene el motor de inferencia',
-  restart: 'Reinicia el motor de inferencia',
-  config: 'Ver/editar configuración: qvox config get|set|path|edit',
-  models: 'Gestiona modelos: qvox models list|download|remove|path',
-  update: 'Actualiza qvox (npm) y reinicia el daemon',
-  version: 'Muestra la versión',
-  help: 'Muestra esta ayuda',
+  serve: 'Start the daemon (API + web panel) and the inference engine',
+  speak: 'Generate audio from text: qvox speak "Hello" --voice aiden --out demo.wav',
+  setup: 'Initial wizard: creates config and folders, checks dependencies',
+  status: 'Show daemon and engine status',
+  stop: 'Stop the inference engine',
+  restart: 'Restart the inference engine',
+  config: 'View/edit configuration: qvox config get|set|path|edit',
+  models: 'Manage models: qvox models list|download|remove|path',
+  update: 'Update qvox (npm) and restart the daemon',
+  version: 'Show the version',
+  help: 'Show this help',
 };
 
-/** Parser mínimo de argumentos: separa positionals y flags (--k v / --bool / -o v). */
+/** Minimal argument parser: splits positionals and flags (--k v / --bool / -o v). */
 function parseArgs(argv) {
   const positionals = [];
   const flags = {};
@@ -56,21 +56,21 @@ function printHelp() {
   console.log(`
 ${brand.displayName} — ${brand.tagline}
 
-Uso:  ${c} <comando> [opciones]
+Usage:  ${c} <command> [options]
 
-Comandos:
+Commands:
 ${Object.entries(COMMANDS)
   .map(([k, d]) => `  ${k.padEnd(9)} ${d}`)
   .join('\n')}
 
-Ejemplos:
+Examples:
   ${c} setup
   ${c} serve --host 0.0.0.0 --port 5111
-  ${c} speak "Buenas, ¿cómo andás?" --voice aiden --out demo.wav
+  ${c} speak "Hi there" --voice aiden --out demo.wav
   ${c} models list
-  ${c} config set apiKey mi-clave-secreta
+  ${c} config set apiKey my-secret-key
 
-Datos/config en: ${brand.dataDir}
+Data/config in: ${brand.dataDir}
 `);
 }
 
@@ -86,7 +86,7 @@ async function run(argv) {
   }
   if (!COMMANDS[cmd]) {
     // eslint-disable-next-line no-console
-    console.error(`Comando desconocido: "${cmd}". Probá "${brand.cli} help".`);
+    console.error(`Unknown command: "${cmd}". Try "${brand.cli} help".`);
     process.exit(1);
   }
 

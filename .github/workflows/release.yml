@@ -1,6 +1,6 @@
 name: release
 
-# Auto-release: al pushear un tag vX.Y.Z publica en npm y crea el GitHub Release.
+# Auto-release: pushing a vX.Y.Z tag publishes to npm and creates the GitHub Release.
 on:
   push:
     tags:

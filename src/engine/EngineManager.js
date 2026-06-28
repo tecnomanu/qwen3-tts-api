@@ -1,7 +1,7 @@
 'use strict';
 /**
- * Administra el ciclo de vida del worker Python (spawn / health / stop / restart).
- * Node no hace inferencia: la delega al proceso Python vía uv.
+ * Manages the Python worker lifecycle (spawn / health / stop / restart).
+ * Node does not run inference: it delegates to the Python process via uv.
  */
 const { spawn } = require('child_process');
 const fs = require('fs');
@@ -19,7 +19,7 @@ class EngineManager {
     this.proc = null;
   }
 
-  /** Resuelve 'auto' -> mlx en Apple Silicon, torch en el resto. */
+  /** Resolve 'auto' -> mlx on Apple Silicon, torch everywhere else. */
   resolveBackend() {
     const b = this.cfg.engine.backend;
     if (b && b !== 'auto') return b;
@@ -57,10 +57,10 @@ class EngineManager {
     }
   }
 
-  /** Levanta el worker si no está corriendo y espera a que responda /health. */
+  /** Start the worker if not running and wait for /health to respond. */
   async start({ wait = true, timeoutMs = 180000 } = {}) {
     if (await this.isUp()) {
-      this.ctx.logger.info('engine ya está corriendo en :' + this.port);
+      this.ctx.logger.info('engine already running on :' + this.port);
       return;
     }
     const cmd = this.cfg.engine.pythonCmd === 'uv' ? 'uv' : this.cfg.engine.pythonCmd;
@@ -68,7 +68,7 @@ class EngineManager {
     const logFile = path.join(this.ctx.paths.logsDir, 'engine.log');
     const logFd = fs.openSync(logFile, 'a');
 
-    this.ctx.logger.info(`levantando engine: ${cmd} ${args.join(' ')}`);
+    this.ctx.logger.info(`starting engine: ${cmd} ${args.join(' ')}`);
     this.proc = spawn(cmd, args, {
       env: this._spawnEnv(),
       stdio: ['ignore', logFd, logFd],
@@ -81,12 +81,12 @@ class EngineManager {
     const deadline = Date.now() + timeoutMs;
     while (Date.now() < deadline) {
       if (await this.isUp()) {
-        this.ctx.logger.ok('engine listo en :' + this.port);
+        this.ctx.logger.ok('engine ready on :' + this.port);
         return;
       }
       await sleep(1500);
     }
-    throw new Error(`el engine no respondió en ${timeoutMs}ms (ver ${logFile})`);
+    throw new Error(`engine did not respond within ${timeoutMs}ms (see ${logFile})`);
   }
 
   async stop() {
@@ -99,9 +99,9 @@ class EngineManager {
     if (pid) {
       try {
         process.kill(pid, 'SIGTERM');
-        this.ctx.logger.ok('engine detenido (pid ' + pid + ')');
+        this.ctx.logger.ok('engine stopped (pid ' + pid + ')');
       } catch {
-        this.ctx.logger.warn('no se pudo matar pid ' + pid + ' (¿ya estaba muerto?)');
+        this.ctx.logger.warn('could not kill pid ' + pid + ' (already dead?)');
       }
       try {
         fs.unlinkSync(this.ctx.paths.pidFile);
@@ -109,7 +109,7 @@ class EngineManager {
         /* ignore */
       }
     } else {
-      this.ctx.logger.warn('no hay engine registrado');
+      this.ctx.logger.warn('no engine registered');
     }
   }
 

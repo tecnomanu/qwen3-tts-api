@@ -1,8 +1,8 @@
 'use strict';
 /**
- * ConfigStore: carga/guarda config desde un archivo JSON (sin DB).
- * Orden de precedencia (mayor gana): env vars > config.json > defaults.
- * Una sola responsabilidad: estado de configuración persistente.
+ * ConfigStore: loads/saves config from a JSON file (no DB).
+ * Precedence (highest wins): env vars > config.json > defaults.
+ * Single responsibility: persistent configuration state.
  */
 const fs = require('fs');
 const defaults = require('./defaults');
@@ -19,7 +19,7 @@ function deepMerge(base, over) {
   return out;
 }
 
-/** Overrides por variables de entorno con prefijo de marca. */
+/** Overrides from brand-prefixed environment variables. */
 function envOverrides() {
   const o = {};
   if (process.env[env('HOST')]) o.host = process.env[env('HOST')];
@@ -41,7 +41,7 @@ class ConfigStore {
       try {
         fileData = JSON.parse(fs.readFileSync(this.file, 'utf8'));
       } catch (e) {
-        throw new Error(`config.json inválido (${this.file}): ${e.message}`);
+        throw new Error(`invalid config.json (${this.file}): ${e.message}`);
       }
     }
     this.data = deepMerge(deepMerge(defaults, fileData), envOverrides());
@@ -53,12 +53,12 @@ class ConfigStore {
     return this.file;
   }
 
-  /** get('engine.port') -> valor anidado por dot-path */
+  /** get('engine.port') -> nested value by dot-path */
   get(dotPath) {
     return dotPath.split('.').reduce((o, k) => (o == null ? o : o[k]), this.data);
   }
 
-  /** set('engine.port', 5200) -> setea anidado (no persiste hasta save()) */
+  /** set('engine.port', 5200) -> sets nested value (not persisted until save()) */
   set(dotPath, value) {
     const keys = dotPath.split('.');
     const last = keys.pop();

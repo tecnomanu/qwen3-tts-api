@@ -1,5 +1,5 @@
 'use strict';
-/** Logger mínimo con niveles y colores. Sin dependencias. */
+/** Minimal leveled logger with colors. Zero dependencies. */
 const LEVELS = { debug: 10, info: 20, warn: 30, error: 40 };
 const C = {
   gray: (s) => `\x1b[90m${s}\x1b[0m`,

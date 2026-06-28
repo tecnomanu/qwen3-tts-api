@@ -1,7 +1,7 @@
 'use strict';
 /**
- * Cliente HTTP hacia el worker Python (motor de inferencia).
- * Aísla el transporte: el resto del código no sabe que por debajo hay HTTP.
+ * HTTP client to the Python worker (inference engine).
+ * Isolates transport: the rest of the code doesn't know there's HTTP underneath.
  */
 const http = require('http');
 
@@ -37,7 +37,7 @@ class PythonBridge {
             try {
               resolve(JSON.parse(buf.toString('utf8') || '{}'));
             } catch (e) {
-              reject(new Error(`respuesta no-JSON del engine: ${e.message}`));
+              reject(new Error(`non-JSON response from engine: ${e.message}`));
             }
           });
         }
@@ -53,7 +53,7 @@ class PythonBridge {
     return this._request('GET', '/health', null, { timeout: 4000 });
   }
 
-  /** Genera audio. Devuelve { buffer (wav), contentType }. */
+  /** Generate audio. Returns { buffer (wav), contentType }. */
   speak(opts) {
     return this._request('POST', '/v1/audio/speech', opts, { raw: true });
   }

@@ -1,38 +1,38 @@
-# Arquitectura
+# Architecture
 
 ```
             ┌──────────────── qvox (Node) ────────────────┐
-   CLI ───► │  cli/ ─ comandos (serve, speak, models...)   │
+   CLI ───► │  cli/ ─ commands (serve, speak, models...)   │
             │  server/ ─ HTTP + panel + auth (api key)     │
-            │  engine/ ─ administra el worker Python        │
-            │  core/ ─ brand, paths, config (archivo), log │
+            │  engine/ ─ manages the Python worker         │
+            │  core/ ─ brand, paths, config (file), logger │
             └───────────────────┬──────────────────────────┘
-                                 │ HTTP localhost (puerto interno)
+                                 │ HTTP localhost (internal port)
             ┌───────────────────▼──────────────────────────┐
-            │  motor (Python, via uv)                       │
-            │  _app.py ─ Flask + split por frases           │
-            │  backends/ ─ mlx | torch (intercambiables)    │
+            │  engine (Python, via uv)                      │
+            │  _app.py ─ Flask + sentence splitting         │
+            │  backends/ ─ mlx | torch (interchangeable)    │
             └───────────────────────────────────────────────┘
 ```
 
-## Principios (SOLID)
-- **SRP**: `core/paths` resuelve rutas; `core/config` el estado; `engine/*` el proceso Python;
-  `server/*` el transporte; cada `cli/commands/*` una acción.
-- **OCP/DIP**: `_app.py` depende de la *interfaz* `TTSBackend` (`backends/base.py`), no de MLX
-  ni Torch. Agregar un backend nuevo = una clase, sin tocar la app.
-- **Composition root**: `core/context.js` arma e inyecta `ctx` (brand, paths, config, logger).
+## Principles (SOLID)
+- **SRP**: `core/paths` resolves paths; `core/config` holds state; `engine/*` the Python process;
+  `server/*` transport; each `cli/commands/*` one action.
+- **OCP/DIP**: `_app.py` depends on the `TTSBackend` *interface* (`backends/base.py`), not on MLX
+  or Torch. Adding a new backend = one class, without touching the app.
+- **Composition root**: `core/context.js` builds and injects `ctx` (brand, paths, config, logger).
 
-## Decisiones
-- **Node administra, Python infiere.** Encaja con `npm install -g` y aísla las deps pesadas de ML.
-- **uv** corre los scripts Python con deps declaradas inline (sin venvs manuales).
-- **Sin DB**: `config.json` en `~/.qvox`. Precedencia: env > archivo > defaults.
-- **Nombre en una constante** (`src/brand.js`). Todo deriva de ahí.
+## Decisions
+- **Node manages, Python infers.** Fits `npm install -g` and isolates the heavy ML deps.
+- **uv** runs the Python scripts with inline-declared deps (no manual venvs).
+- **No DB**: `config.json` in `~/.qvox`. Precedence: env > file > defaults.
+- **Name in a single constant** (`src/brand.js`). Everything derives from it.
 
 ## APX-compatible
-El daemon expone HTTP simple con API key, así se puede registrar como runtime/herramienta
-en APX más adelante sin cambios en el core.
+The daemon exposes simple HTTP with an API key, so it can be registered as an APX
+runtime/tool later without changes to the core.
 
 ## Deploy
-- **Mac**: nativo (sin Docker — Docker en Mac no accede a MPS/Metal). Backend mlx.
-- **VPS NVIDIA**: Docker con CUDA. Backend torch. Vuela.
-- **VPS Radeon (RDNA1/5700XT)**: nativo/bare-metal con ROCm (no oficial, sin flash-attn). Backend torch.
+- **Mac**: native (no Docker — Docker on Mac can't access MPS/Metal). mlx backend.
+- **NVIDIA VPS**: Docker with CUDA. torch backend. Fast.
+- **Radeon VPS (RDNA1/5700XT)**: bare-metal with ROCm (unofficial, no flash-attn). torch backend.

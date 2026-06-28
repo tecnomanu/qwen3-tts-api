@@ -1,7 +1,7 @@
-"""Backend MLX (Apple Silicon). Rápido para VoiceDesign/CustomVoice.
+"""MLX backend (Apple Silicon). Fast for VoiceDesign/CustomVoice.
 
-OJO: la clonación está rota en mlx-audio 0.3.0rc1 (speaker_encoder con layout
-channels-first vs conv channels-last). Para clonar usar el backend torch.
+NOTE: cloning is broken in mlx-audio 0.3.0rc1 (speaker_encoder uses channels-first
+layout vs channels-last convs). Use the torch backend to clone.
 """
 import numpy as np
 from mlx_audio.tts.utils import load_model
@@ -22,7 +22,7 @@ class MlxBackend(TTSBackend):
     def _model(self, role):
         src = self.resolve(role)
         if src not in self._cache:
-            print(f"[mlx] cargando {src} ...", flush=True)
+            print(f"[mlx] loading {src} ...", flush=True)
             self._cache[src] = load_model(src)
         return self._cache[src]
 
@@ -33,8 +33,8 @@ class MlxBackend(TTSBackend):
               temperature=0.7, max_tokens=None):
         if clone:
             raise RuntimeError(
-                "Clonación no soportada en backend MLX (bug en mlx-audio 0.3.0rc1). "
-                "Cambiá a backend torch: qvox config set engine.backend torch"
+                "Cloning is not supported on the MLX backend (bug in mlx-audio 0.3.0rc1). "
+                "Switch to the torch backend: qvox config set engine.backend torch"
             )
         mt = max_tokens or cap_tokens(text)
         model = self._model("voicedesign")

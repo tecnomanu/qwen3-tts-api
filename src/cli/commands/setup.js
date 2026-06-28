@@ -1,5 +1,5 @@
 'use strict';
-/** Asistente inicial: crea config + carpetas y verifica dependencias del sistema. */
+/** Initial wizard: creates config + folders and checks system dependencies. */
 const fs = require('fs');
 const { execSync } = require('child_process');
 
@@ -14,32 +14,30 @@ function has(cmd) {
 
 module.exports = async function setup(ctx) {
   const { logger, paths, config, brand } = ctx;
-  logger.info(`Configurando ${brand.displayName} en ${paths.root}`);
+  logger.info(`Setting up ${brand.displayName} in ${paths.root}`);
 
   if (!fs.existsSync(paths.configFile)) {
     config.save();
-    logger.ok('config.json creado');
+    logger.ok('config.json created');
   } else {
-    logger.info('config.json ya existe (no se toca)');
+    logger.info('config.json already exists (left untouched)');
   }
 
-  // dependencias del sistema
+  // system dependencies
   const checks = [
-    ['uv', 'gestor python (recomendado) — https://docs.astral.sh/uv/'],
-    ['python3', 'fallback si no usás uv'],
-    ['ffmpeg', 'conversión de audio (mp3/ogg)'],
+    ['uv', 'python manager (recommended) — https://docs.astral.sh/uv/'],
+    ['python3', 'fallback if you do not use uv'],
+    ['ffmpeg', 'audio conversion (mp3/ogg)'],
   ];
-  logger.info('Dependencias del sistema:');
+  logger.info('System dependencies:');
   for (const [bin, why] of checks) {
     // eslint-disable-next-line no-console
     console.log(`  ${has(bin) ? '✅' : '❌'} ${bin.padEnd(8)} ${why}`);
   }
 
-  // backend probable
+  // likely backend
   const isMac = process.platform === 'darwin' && process.arch === 'arm64';
-  logger.info(
-    `Backend sugerido: ${isMac ? 'mlx (Apple Silicon, rápido)' : 'torch (CUDA/ROCm/CPU)'}`
-  );
+  logger.info(`Suggested backend: ${isMac ? 'mlx (Apple Silicon, fast)' : 'torch (CUDA/ROCm/CPU)'}`);
 
-  logger.ok(`Listo. Probá:  ${brand.cli} serve`);
+  logger.ok(`Done. Try:  ${brand.cli} serve`);
 };

@@ -1,5 +1,5 @@
 'use strict';
-/** Actualiza el paquete por npm y reinicia el engine. */
+/** Update the package via npm and restart the engine. */
 const { execSync } = require('child_process');
 const { EngineManager } = require('../../engine/EngineManager');
 
@@ -7,17 +7,17 @@ module.exports = async function update(ctx, { flags }) {
   const { logger } = ctx;
   const pkg = require('../../../package.json').name;
   const tag = flags.tag || 'latest';
-  logger.info(`actualizando ${pkg}@${tag} (npm -g)...`);
+  logger.info(`updating ${pkg}@${tag} (npm -g)...`);
   try {
     execSync(`npm install -g ${pkg}@${tag}`, { stdio: 'inherit' });
-    logger.ok('actualizado');
+    logger.ok('updated');
   } catch (e) {
-    logger.error('falló npm install -g: ' + e.message);
+    logger.error('npm install -g failed: ' + e.message);
     process.exit(1);
   }
   try {
     await new EngineManager(ctx).restart();
   } catch {
-    logger.warn('no se pudo reiniciar el engine (quizá no estaba corriendo)');
+    logger.warn('could not restart the engine (maybe it was not running)');
   }
 };

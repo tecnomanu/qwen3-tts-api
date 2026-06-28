@@ -1,35 +1,35 @@
-# API HTTP
+# HTTP API
 
 Base: `http://<host>:<port>` (default `127.0.0.1:5111`).
-Si `apiKey` está seteada, mandá `x-api-key: <clave>` o `Authorization: Bearer <clave>`
-en las rutas `/v1/*` y `/api/*`. `/health` siempre abierto.
+If `apiKey` is set, send `x-api-key: <key>` or `Authorization: Bearer <key>`
+on `/v1/*` and `/api/*` routes. `/health` is always open.
 
-## `POST /v1/audio/speech` (compatible OpenAI)
-Body JSON:
-| campo | tipo | default | nota |
+## `POST /v1/audio/speech` (OpenAI-compatible)
+JSON body:
+| field | type | default | note |
 |---|---|---|---|
-| `input` | string | — | requerido (alias: `text`) |
+| `input` | string | — | required (alias: `text`) |
 | `language` | string | `Spanish` | |
-| `instruct` | string | — | descripción de voz → diseño |
-| `clone` | string | — | ruta a wav de referencia → clonación (backend torch) |
-| `voice` | string | — | voz preset |
+| `instruct` | string | — | voice description → design |
+| `clone` | string | — | path to a reference wav → cloning (torch backend) |
+| `voice` | string | — | preset voice |
 | `temperature` | number | `0.7` | |
-| `split` | bool | `true` | divide por frases (evita runaway) |
+| `split` | bool | `true` | split by sentences (avoids runaway) |
 
-Respuesta: `audio/wav` (binario).
+Response: `audio/wav` (binary).
 
 ```bash
 curl -X POST http://127.0.0.1:5111/v1/audio/speech \
-  -H "content-type: application/json" -H "x-api-key: TU_CLAVE" \
-  -d '{"input":"Hola mundo","instruct":"A warm Argentine voice"}' -o out.wav
+  -H "content-type: application/json" -H "x-api-key: YOUR_KEY" \
+  -d '{"input":"Hello world","instruct":"A warm voice"}' -o out.wav
 ```
 
-## Otras rutas
-| Método | Ruta | Descripción |
+## Other routes
+| Method | Route | Description |
 |---|---|---|
-| GET | `/health` | ping del daemon + estado del motor |
-| GET | `/v1/models` | modelos cargados en memoria |
-| GET | `/api/status` | estado completo (para el panel) |
-| GET | `/api/config` | config actual (claves enmascaradas) |
-| POST | `/api/config` | patch de config `{ "tts.temperature": 0.6 }` |
-| POST | `/api/engine/restart` | reinicia el motor |
+| GET | `/health` | daemon ping + engine state |
+| GET | `/v1/models` | models loaded in memory |
+| GET | `/api/status` | full state (for the panel) |
+| GET | `/api/config` | current config (keys masked) |
+| POST | `/api/config` | config patch `{ "tts.temperature": 0.6 }` |
+| POST | `/api/engine/restart` | restart the engine |

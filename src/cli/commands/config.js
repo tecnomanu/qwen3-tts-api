@@ -1,5 +1,5 @@
 'use strict';
-/** Ver/editar config: qvox config get [path] | set <path> <val> | path | edit | show */
+/** View/edit config: qvox config get [path] | set <path> <val> | path | edit | show */
 const { execSync } = require('child_process');
 
 function coerce(v) {
@@ -33,18 +33,18 @@ module.exports = async function config(ctx, { positionals }) {
       const key = positionals.shift();
       const val = positionals.shift();
       if (!key || val === undefined) {
-        logger.error('uso: qvox config set <path> <valor>');
+        logger.error('usage: qvox config set <path> <value>');
         process.exit(1);
       }
       store.set(key, coerce(val)).save();
-      logger.ok(`${key} = ${coerce(val)}  (guardado)`);
+      logger.ok(`${key} = ${coerce(val)}  (saved)`);
       break;
     }
     case 'edit':
       execSync(`${process.env.EDITOR || 'nano'} ${paths.configFile}`, { stdio: 'inherit' });
       break;
     default:
-      logger.error(`subcomando desconocido: ${sub} (get|set|path|edit|show)`);
+      logger.error(`unknown subcommand: ${sub} (get|set|path|edit|show)`);
       process.exit(1);
   }
 };

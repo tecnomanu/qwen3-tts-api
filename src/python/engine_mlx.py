@@ -8,7 +8,7 @@
 #     "soundfile",
 # ]
 # ///
-"""Entry-point del motor con backend MLX (Apple Silicon)."""
+"""Engine entry-point with the MLX backend (Apple Silicon)."""
 import os
 import sys
 import warnings

@@ -1,8 +1,8 @@
 'use strict';
 /**
- * Auth por API key. Si config.apiKey está seteada, exige el header
- * Authorization: Bearer <key>  o  x-api-key: <key> en rutas protegidas.
- * Si no hay apiKey, todo abierto (pensado para localhost).
+ * API key auth. If config.apiKey is set, require the header
+ * Authorization: Bearer <key>  or  x-api-key: <key>  on protected routes.
+ * If no apiKey is set, everything is open (intended for localhost).
  */
 function extractKey(req) {
   const auth = req.headers['authorization'];
@@ -11,13 +11,13 @@ function extractKey(req) {
   return null;
 }
 
-/** Devuelve true si pasa; si no, responde 401 y devuelve false. */
+/** Returns true if allowed; otherwise responds 401 and returns false. */
 function checkAuth(ctx, req, res) {
   const apiKey = ctx.config.get('apiKey');
-  if (!apiKey) return true; // sin protección
+  if (!apiKey) return true; // unprotected
   if (extractKey(req) === apiKey) return true;
   res.writeHead(401, { 'content-type': 'application/json' });
-  res.end(JSON.stringify({ error: 'unauthorized: api key inválida o faltante' }));
+  res.end(JSON.stringify({ error: 'unauthorized: invalid or missing api key' }));
   return false;
 }
 

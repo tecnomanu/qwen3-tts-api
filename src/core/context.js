@@ -1,7 +1,7 @@
 'use strict';
 /**
- * Composition root: arma brand + paths + config + logger en un solo `ctx`
- * que se inyecta a comandos y servidor (inversión de dependencias).
+ * Composition root: builds brand + paths + config + logger into a single `ctx`
+ * injected into commands and the server (dependency inversion).
  */
 const { brand, env } = require('../brand');
 const { buildPaths, ensureDirs } = require('./paths');

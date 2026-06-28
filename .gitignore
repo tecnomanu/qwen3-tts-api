@@ -5,6 +5,7 @@ dist/
 out/
 *.wav
 *.mp3
+!assets/*.png
 .env
 .venv/
 __pycache__/

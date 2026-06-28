@@ -12,7 +12,7 @@
 #     "accelerate",
 # ]
 # ///
-"""Entry-point del motor con backend PyTorch (universal: CUDA/ROCm/MPS/CPU)."""
+"""Engine entry-point with the PyTorch backend (universal: CUDA/ROCm/MPS/CPU)."""
 import os
 import sys
 import warnings

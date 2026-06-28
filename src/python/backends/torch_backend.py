@@ -1,7 +1,7 @@
-"""Backend PyTorch (universal): CUDA / ROCm / MPS / CPU.
+"""PyTorch backend (universal): CUDA / ROCm / MPS / CPU.
 
-Soporta diseño de voz, voz custom y CLONACIÓN (lo que MLX no puede hoy).
-Más lento en MPS (sin flash-attn) pero funciona en todos lados.
+Supports voice design, custom voice and CLONING (which MLX can't do today).
+Slower on MPS (no flash-attn) but works everywhere.
 """
 import os
 import numpy as np
@@ -32,7 +32,7 @@ class TorchBackend(TTSBackend):
     def _model(self, role):
         src = self.resolve(role)
         if src not in self._cache:
-            print(f"[torch] cargando {src} ...", flush=True)
+            print(f"[torch] loading {src} ...", flush=True)
             self._cache[src] = Qwen3TTSModel.from_pretrained(
                 src,
                 device_map=self.device,

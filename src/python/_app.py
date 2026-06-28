@@ -1,7 +1,7 @@
-"""App Flask compartida por todos los backends.
+"""Flask app shared by all backends.
 
-Expone /health, /v1/models, /v1/audio/speech (con split por frases para evitar
-el runaway de EOS en textos largos). El backend se inyecta.
+Exposes /health, /v1/models, /v1/audio/speech (with sentence splitting to avoid
+the EOS runaway on long text). The backend is injected.
 """
 import io
 import os
@@ -12,7 +12,7 @@ import numpy as np
 import soundfile as sf
 from flask import Flask, request, jsonify, Response
 
-_lock = threading.Lock()  # 1 generación a la vez (GPU)
+_lock = threading.Lock()  # one generation at a time (GPU)
 
 
 def wav_bytes(audio, sr):
@@ -95,7 +95,7 @@ def run(backend):
     if os.environ.get("QVOX_WARMUP", "1") == "1":
         try:
             print("--- warmup ---", flush=True)
-            backend.synth("Hola.", language="Spanish",
+            backend.synth("Hello.", language="English",
                           instruct="A neutral voice.", max_tokens=192)
             print("--- warmup ok ---", flush=True)
         except Exception as e:

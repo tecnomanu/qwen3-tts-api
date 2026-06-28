@@ -1,61 +1,61 @@
 <!DOCTYPE html>
-<html lang="es">
+<html lang="en">
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>qvox · panel</title>
+  <title>QVox · panel</title>
   <link rel="stylesheet" href="/styles.css" />
 </head>
 <body>
   <header>
-    <div class="brand"><span class="dot" id="dot"></span><h1 id="title">qvox</h1>
-      <span class="tag" id="tag">panel de control</span></div>
+    <div class="brand"><span class="dot" id="dot"></span><h1 id="title">QVox</h1>
+      <span class="tag" id="tag">control panel</span></div>
     <div class="keybox">
-      <input id="apikey" type="password" placeholder="API key (si está protegido)" />
-      <button id="savekey" class="ghost">guardar</button>
+      <input id="apikey" type="password" placeholder="API key (if protected)" />
+      <button id="savekey" class="ghost">save</button>
     </div>
   </header>
 
   <main>
     <section class="card" id="status-card">
-      <h2>Estado</h2>
-      <div id="status" class="kv">cargando…</div>
-      <button id="restart" class="ghost small">reiniciar motor</button>
+      <h2>Status</h2>
+      <div id="status" class="kv">loading…</div>
+      <button id="restart" class="ghost small">restart engine</button>
     </section>
 
     <section class="card" id="test-card">
-      <h2>Probar voz</h2>
-      <textarea id="text" rows="3" placeholder="Escribí algo para escuchar…">Hola, ¿cómo andás? Probando el motor de voz.</textarea>
+      <h2>Test voice</h2>
+      <textarea id="text" rows="3" placeholder="Type something to hear…">Hi there, this is a quick voice engine test.</textarea>
       <div class="row">
-        <label>Idioma <input id="lang" value="Spanish" /></label>
+        <label>Language <input id="lang" value="Spanish" /></label>
         <label>Temp <input id="temp" type="number" step="0.1" value="0.7" /></label>
       </div>
       <div class="row">
-        <label class="grow">Instruct (descripción de voz, inglés)
+        <label class="grow">Instruct (voice description, English)
           <input id="instruct" placeholder="A warm Argentine man, Buenos Aires accent" /></label>
       </div>
       <div class="row">
-        <label class="grow">Clone (ruta a wav de referencia, opcional)
-          <input id="clone" placeholder="/ruta/voz_referencia.wav" /></label>
+        <label class="grow">Clone (path to a reference wav, optional)
+          <input id="clone" placeholder="/path/to/reference_voice.wav" /></label>
       </div>
-      <button id="speak">🔊 Generar</button>
+      <button id="speak">🔊 Generate</button>
       <span id="speak-status" class="muted"></span>
       <audio id="player" controls></audio>
     </section>
 
     <section class="card" id="models-card">
-      <h2>Modelos</h2>
+      <h2>Models</h2>
       <div id="models" class="kv">—</div>
     </section>
 
     <section class="card" id="config-card">
-      <h2>Configuración</h2>
+      <h2>Configuration</h2>
       <pre id="config">—</pre>
-      <p class="muted">Editá con la terminal: <code>qvox config set &lt;path&gt; &lt;valor&gt;</code></p>
+      <p class="muted">Edit from the terminal: <code>qvox config set &lt;path&gt; &lt;value&gt;</code></p>
     </section>
   </main>
 
-  <footer>qvox · localhost — <span id="foot"></span></footer>
+  <footer>QVox · localhost — <span id="foot"></span></footer>
   <script src="/app.js"></script>
 </body>
 </html>

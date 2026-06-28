@@ -1,8 +1,8 @@
 'use strict';
 /**
- * Resuelve TODAS las rutas a partir de brand.dataDir.
- * Permite override de la carpeta raíz por env ($QVOX_HOME) o config.
- * Una sola responsabilidad: dónde vive cada cosa.
+ * Resolves ALL paths from brand.dataDir.
+ * Allows overriding the root folder via env ($QVOX_HOME) or config.
+ * Single responsibility: where each thing lives.
  */
 const path = require('path');
 const fs = require('fs');
@@ -17,17 +17,17 @@ function buildPaths(rootOverride) {
   return {
     root, // ~/.qvox
     configFile: path.join(root, 'config.json'),
-    modelsDir: path.join(root, 'models'), // pesos descargados
-    voicesDir: path.join(root, 'voices'), // refs de voces clonadas (wav 24k)
-    outDir: path.join(root, 'out'), // audios generados desde CLI
+    modelsDir: path.join(root, 'models'), // downloaded weights
+    voicesDir: path.join(root, 'voices'), // cloned voice refs (24k wav)
+    outDir: path.join(root, 'out'), // audio generated from the CLI
     logsDir: path.join(root, 'logs'),
     runDir: path.join(root, 'run'), // pid/sockets
     pidFile: path.join(root, 'run', 'engine.pid'),
-    pythonDir: path.join(__dirname, '..', 'python'), // código del worker (en el paquete)
+    pythonDir: path.join(__dirname, '..', 'python'), // worker code (in the package)
   };
 }
 
-/** Crea las carpetas de datos si no existen (idempotente). */
+/** Create the data folders if they do not exist (idempotent). */
 function ensureDirs(p) {
   for (const dir of [p.root, p.modelsDir, p.voicesDir, p.outDir, p.logsDir, p.runDir]) {
     fs.mkdirSync(dir, { recursive: true });

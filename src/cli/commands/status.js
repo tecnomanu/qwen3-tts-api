@@ -1,5 +1,5 @@
 'use strict';
-/** Estado del daemon + motor. */
+/** Daemon + engine status. */
 const { EngineManager } = require('../../engine/EngineManager');
 
 module.exports = async function status(ctx) {
@@ -14,7 +14,7 @@ ${brand.displayName} status
   data dir   : ${paths.root}
   config     : ${paths.configFile}
   host:port  : ${cfg.host}:${cfg.port}
-  api key    : ${cfg.apiKey ? 'sí (protegido)' : 'no (abierto)'}
+  api key    : ${cfg.apiKey ? 'yes (protected)' : 'no (open)'}
   engine     : backend=${cfg.engine.backend} port=${cfg.engine.port}  ->  ${up ? '🟢 UP' : '🔴 DOWN'}
   models dir : ${paths.modelsDir}
 `);

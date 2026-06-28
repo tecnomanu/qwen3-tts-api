@@ -1,5 +1,5 @@
 'use strict';
-/** Gestiona modelos: list | download <role|id> | remove <name> | path */
+/** Manage models: list | download <role|id> | remove <name> | path */
 const fs = require('fs');
 const path = require('path');
 const { spawn } = require('child_process');
@@ -27,17 +27,17 @@ module.exports = async function models(ctx, { positionals }) {
 
   if (sub === 'list') {
     // eslint-disable-next-line no-console
-    console.log('Roles configurados:');
+    console.log('Configured roles:');
     for (const role of ['voicedesign', 'base', 'custom']) {
       // eslint-disable-next-line no-console
       console.log(`  ${role.padEnd(12)} ${cfg.models[role]}`);
     }
     // eslint-disable-next-line no-console
-    console.log(`\nDescargados en ${paths.modelsDir}:`);
+    console.log(`\nDownloaded in ${paths.modelsDir}:`);
     const entries = fs.existsSync(paths.modelsDir)
       ? fs.readdirSync(paths.modelsDir, { withFileTypes: true }).filter((e) => e.isDirectory())
       : [];
-    if (!entries.length) console.log('  (ninguno)');
+    if (!entries.length) console.log('  (none)');
     for (const e of entries) {
       const mb = (dirSize(path.join(paths.modelsDir, e.name)) / 1048576).toFixed(0);
       // eslint-disable-next-line no-console
@@ -47,7 +47,7 @@ module.exports = async function models(ctx, { positionals }) {
     if (await engine.isUp()) {
       try {
         const m = await engine.bridge.listModels();
-        logger.info('cargados en memoria: ' + JSON.stringify(m.data ? m.data.map((x) => x.id) : m));
+        logger.info('loaded in memory: ' + JSON.stringify(m.data ? m.data.map((x) => x.id) : m));
       } catch {
         /* ignore */
       }
@@ -58,12 +58,12 @@ module.exports = async function models(ctx, { positionals }) {
   if (sub === 'download') {
     const arg = positionals.shift();
     if (!arg) {
-      logger.error('uso: qvox models download <role|hf-id>  (role: voicedesign|base|custom)');
+      logger.error('usage: qvox models download <role|hf-id>  (role: voicedesign|base|custom)');
       process.exit(1);
     }
     const id = cfg.models[arg] || arg;
     const dest = path.join(paths.modelsDir, id.split('/').pop());
-    logger.info(`descargando ${id} -> ${dest}`);
+    logger.info(`downloading ${id} -> ${dest}`);
     const script = path.join(paths.pythonDir, 'download.py');
     await new Promise((res, rej) => {
       const p = spawn('uv', ['run', script, id, dest], {
@@ -74,9 +74,9 @@ module.exports = async function models(ctx, { positionals }) {
           ...(cfg.hf.token ? { HF_TOKEN: cfg.hf.token } : {}),
         },
       });
-      p.on('exit', (code) => (code === 0 ? res() : rej(new Error('download exit ' + code))));
+      p.on('exit', (code) => (code === 0 ? res() : rej(new Error('download exited ' + code))));
     });
-    logger.ok('descarga completa: ' + dest);
+    logger.ok('download complete: ' + dest);
     return;
   }
 
@@ -84,14 +84,14 @@ module.exports = async function models(ctx, { positionals }) {
     const name = positionals.shift();
     const target = path.join(paths.modelsDir, name || '');
     if (!name || !fs.existsSync(target)) {
-      logger.error('no existe: ' + target);
+      logger.error('does not exist: ' + target);
       process.exit(1);
     }
     fs.rmSync(target, { recursive: true, force: true });
-    logger.ok('eliminado: ' + target);
+    logger.ok('removed: ' + target);
     return;
   }
 
-  logger.error(`subcomando desconocido: ${sub} (list|download|remove|path)`);
+  logger.error(`unknown subcommand: ${sub} (list|download|remove|path)`);
   process.exit(1);
 };

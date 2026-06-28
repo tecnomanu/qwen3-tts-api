@@ -5,9 +5,9 @@
 #     "hf_transfer",
 # ]
 # ///
-"""Descarga un modelo de HuggingFace a una carpeta local, con barra de progreso.
-Uso: uv run download.py <repo_id> <dest_dir>
-Usa HF_TOKEN si está en el entorno (evita el throttle anónimo).
+"""Download a HuggingFace model into a local folder, with a progress bar.
+Usage: uv run download.py <repo_id> <dest_dir>
+Uses HF_TOKEN if present in the environment (avoids anonymous throttling).
 """
 import os
 import sys
@@ -16,7 +16,7 @@ import time
 import threading
 import urllib.request
 
-# desactivamos las barras internas de hf para mostrar UNA sola, global
+# disable hf's internal bars so we show a single, global one
 os.environ["HF_HUB_DISABLE_PROGRESS_BARS"] = "1"
 from huggingface_hub import snapshot_download  # noqa: E402
 
@@ -63,7 +63,7 @@ def render_bar():
                 f"{cur / 1048576:6.0f} / {total / 1048576:.0f} MB"
             )
         else:
-            sys.stdout.write(f"\r  descargado {cur / 1048576:.0f} MB ...")
+            sys.stdout.write(f"\r  downloaded {cur / 1048576:.0f} MB ...")
         sys.stdout.flush()
         time.sleep(0.5)
 
@@ -76,4 +76,4 @@ try:
 finally:
     stop.set()
     worker.join(timeout=1)
-print(f"\n  ✅ completo: {dest}", flush=True)
+print(f"\n  ✅ complete: {dest}", flush=True)

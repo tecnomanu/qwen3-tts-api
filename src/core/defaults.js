@@ -1,40 +1,40 @@
 'use strict';
-/** Configuración por defecto. Todo se puede pisar por config.json o env. */
+/** Default configuration. Everything can be overridden via config.json or env. */
 module.exports = {
-  // --- servidor ---
-  host: '127.0.0.1', // localhost por defecto; 0.0.0.0 para exponer en red (VPS)
+  // --- server ---
+  host: '127.0.0.1', // localhost by default; use 0.0.0.0 to expose on the network (VPS)
   port: 5111,
-  apiKey: null, // null = sin auth (solo localhost). Poné una clave para exponer en red.
+  apiKey: null, // null = no auth (localhost only). Set a key to expose on the network.
 
-  // --- motor de inferencia (worker python) ---
+  // --- inference engine (python worker) ---
   engine: {
     backend: 'auto', // 'auto' | 'mlx' | 'torch' | 'cpu'
-    port: 5199, // puerto interno del worker python (no se expone)
-    pythonCmd: 'uv', // 'uv' (recomendado) o 'python3'
+    port: 5199, // internal port of the python worker (not exposed)
+    pythonCmd: 'uv', // 'uv' (recommended) or 'python3'
     warmup: true,
-    autostart: true, // el server levanta el worker solo
+    autostart: true, // the server boots the worker automatically
   },
 
-  // --- modelos ---
+  // --- models ---
   models: {
-    // ids o paths locales por rol
+    // ids or local paths per role
     voicedesign: 'Qwen/Qwen3-TTS-12Hz-1.7B-VoiceDesign',
     base: 'Qwen/Qwen3-TTS-12Hz-1.7B-Base',
     custom: 'Qwen/Qwen3-TTS-12Hz-1.7B-CustomVoice',
     defaultRole: 'voicedesign',
   },
 
-  // --- generación ---
+  // --- generation ---
   tts: {
     language: 'Spanish',
     temperature: 0.7,
-    splitSentences: true, // evita el runaway de EOS en textos largos
+    splitSentences: true, // avoids the EOS runaway on long text
     defaultVoice: 'aiden',
   },
 
   // --- huggingface ---
   hf: {
-    token: null, // se puede setear para descargas rápidas (evita throttle anónimo)
+    token: null, // set it for fast downloads (avoids anonymous throttling)
     enableHfTransfer: true,
   },
 };

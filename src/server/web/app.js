@@ -1,5 +1,5 @@
 'use strict';
-// Panel qvox — vanilla JS, sin dependencias.
+// QVox panel — vanilla JS, no dependencies.
 const $ = (id) => document.getElementById(id);
 const KEY_STORE = 'qvox.apikey';
 
@@ -20,13 +20,13 @@ async function api(path, opts = {}) {
 async function refresh() {
   try {
     const s = await (await api('/api/status')).json();
-    $('title').textContent = s.brand || 'qvox';
-    document.title = (s.brand || 'qvox') + ' · panel';
+    $('title').textContent = s.brand || 'QVox';
+    document.title = (s.brand || 'QVox') + ' · panel';
     const up = s.engine.up;
     $('dot').className = 'dot ' + (up ? 'up' : 'down');
     $('status').innerHTML =
-      `motor: <b>${up ? 'activo' : 'apagado'}</b> · backend: <b>${s.engine.backend}</b><br>` +
-      `host: <b>${s.host}:${s.port}</b> · protegido: <b>${s.protected ? 'sí' : 'no'}</b>`;
+      `engine: <b>${up ? 'up' : 'down'}</b> · backend: <b>${s.engine.backend}</b><br>` +
+      `host: <b>${s.host}:${s.port}</b> · protected: <b>${s.protected ? 'yes' : 'no'}</b>`;
     $('models').innerHTML = Object.entries(s.models)
       .filter(([k]) => k !== 'defaultRole')
       .map(([k, v]) => `${k}: <b>${v}</b>`).join('<br>');
@@ -46,9 +46,9 @@ $('savekey').onclick = () => {
 };
 
 $('restart').onclick = async () => {
-  $('restart').textContent = 'reiniciando…';
+  $('restart').textContent = 'restarting…';
   try { await api('/api/engine/restart', { method: 'POST' }); } catch (e) { alert(e.message); }
-  $('restart').textContent = 'reiniciar motor';
+  $('restart').textContent = 'restart engine';
   refresh();
 };
 
@@ -60,14 +60,14 @@ $('speak').onclick = async () => {
   };
   if ($('instruct').value.trim()) body.instruct = $('instruct').value.trim();
   if ($('clone').value.trim()) body.clone = $('clone').value.trim();
-  $('speak-status').textContent = 'generando…';
+  $('speak-status').textContent = 'generating…';
   const t0 = Date.now();
   try {
     const res = await api('/v1/audio/speech', { method: 'POST', body: JSON.stringify(body), headers: headers(true) });
     const blob = await res.blob();
     $('player').src = URL.createObjectURL(blob);
     $('player').play();
-    $('speak-status').textContent = `listo (${((Date.now() - t0) / 1000).toFixed(1)}s)`;
+    $('speak-status').textContent = `done (${((Date.now() - t0) / 1000).toFixed(1)}s)`;
   } catch (e) {
     $('speak-status').textContent = 'error: ' + e.message;
   }
