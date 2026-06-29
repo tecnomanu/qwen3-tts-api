@@ -38,13 +38,26 @@ async function refresh() {
     $('status').innerHTML = `host: <b>${s.host}:${s.port}</b><br>backend: <b>${s.engine.backend}</b>`;
     $('engine').value = s.engine.backend;
     $('prot-status').innerHTML = `protected: <b>${s.protected ? 'yes' : 'no'}</b>`;
-    $('foot').textContent = `${s.brand} · ${s.engine.backend}`;
+    $('foot-ver').textContent = 'v' + (s.version || '?');
+    $('foot-eng').textContent = `backend ${s.engine.backend}`;
     renderKey();
     renderExamples();
   } catch (e) {
     $('status').innerHTML = `<span style="color:#ff6b6b">error: ${e.message}</span>`;
   }
   renderModels();
+  renderVoices();
+}
+
+async function renderVoices() {
+  try {
+    const { voices } = await (await api('/v1/voices')).json();
+    const sel = $('voice'); const cur = sel.value;
+    const list = voices || [];
+    const none = list.length ? '— none (use base voice) —' : '— none · CustomVoice not installed —';
+    sel.innerHTML = `<option value="">${none}</option>` + list.map((v) => `<option>${v}</option>`).join('');
+    sel.value = cur;
+  } catch { /* ignore */ }
 }
 
 async function renderModels() {
@@ -104,10 +117,16 @@ $('chips').addEventListener('click', (e) => {
 });
 
 // ---------- generate ----------
+function currentBody() {
+  const b = { input: $('text').value, language: $('lang').value || 'Spanish', temperature: Number($('temp').value) || 0.7 };
+  if ($('instruct').value.trim()) b.instruct = $('instruct').value.trim();
+  if ($('voice').value) b.voice = $('voice').value;
+  if ($('clone').value.trim()) b.clone = $('clone').value.trim();
+  return b;
+}
+
 $('speak').onclick = async () => {
-  const body = { input: $('text').value, language: $('lang').value || 'Spanish', temperature: Number($('temp').value) || 0.7 };
-  if ($('instruct').value.trim()) body.instruct = $('instruct').value.trim();
-  if ($('clone').value.trim()) body.clone = $('clone').value.trim();
+  const body = currentBody();
   $('speak-status').textContent = 'generating…';
   const t0 = Date.now();
   try {
@@ -123,29 +142,32 @@ $('speak').onclick = async () => {
 function examples() {
   const url = `http://${HOST}/v1/audio/speech`;
   const hdrKey = getKey() ? mask(getKey()) : 'YOUR_KEY';
+  const body = currentBody();
+  const json = JSON.stringify(body);
+  const jsonPretty = JSON.stringify(body, null, 2);
   return {
     curl: `curl -X POST ${url} \\
   -H "content-type: application/json" \\
   -H "x-api-key: ${hdrKey}" \\
-  -d '{"input":"Hello from QVox","instruct":"A warm voice"}' \\
+  -d '${json.replace(/'/g, "'\\''")}' \\
   --output out.wav`,
     js: `const res = await fetch("${url}", {
   method: "POST",
   headers: { "content-type": "application/json", "x-api-key": "${hdrKey}" },
-  body: JSON.stringify({ input: "Hello from QVox", instruct: "A warm voice" })
+  body: JSON.stringify(${jsonPretty})
 });
 const blob = await res.blob(); // audio/wav`,
     python: `import requests
 r = requests.post("${url}",
     headers={"x-api-key": "${hdrKey}"},
-    json={"input": "Hello from QVox", "instruct": "A warm voice"})
+    json=${jsonPretty.replace(/true/g, 'True').replace(/false/g, 'False')})
 open("out.wav", "wb").write(r.content)`,
     php: `<?php
 $ch = curl_init("${url}");
 curl_setopt_array($ch, [
   CURLOPT_POST => true,
   CURLOPT_HTTPHEADER => ["content-type: application/json", "x-api-key: ${hdrKey}"],
-  CURLOPT_POSTFIELDS => json_encode(["input" => "Hello from QVox", "instruct" => "A warm voice"]),
+  CURLOPT_POSTFIELDS => '${json.replace(/'/g, "\\'")}',
   CURLOPT_RETURNTRANSFER => true,
 ]);
 file_put_contents("out.wav", curl_exec($ch));`,
@@ -169,6 +191,10 @@ function copy(text, btn) {
     setTimeout(() => { btn.innerHTML = old; }, 1200);
   });
 }
+
+// live-update the examples as the form changes
+['text', 'lang', 'temp', 'instruct', 'voice', 'clone'].forEach((id) =>
+  $(id).addEventListener('input', renderExamples));
 
 refresh();
 setInterval(refresh, 8000);

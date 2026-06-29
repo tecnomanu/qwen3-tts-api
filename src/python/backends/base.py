@@ -5,6 +5,7 @@ whether MLX, PyTorch or CPU runs underneath -> dependency inversion.
 """
 from __future__ import annotations
 import os
+import json
 
 
 class TTSBackend:
@@ -20,10 +21,24 @@ class TTSBackend:
         local = os.path.join(self.models_dir, ident.split("/")[-1])
         return local if os.path.isdir(local) else ident
 
+    def speakers(self) -> list[str]:
+        """Named voices from the CustomVoice model config (spk_id), if downloaded.
+        Returns [] when the CustomVoice model is not present locally."""
+        src = self.resolve("custom")
+        cfg = os.path.join(src, "config.json")
+        if os.path.isfile(cfg):
+            try:
+                d = json.load(open(cfg, encoding="utf-8"))
+                spk = (d.get("talker_config") or {}).get("spk_id") or {}
+                return list(spk.keys())
+            except Exception:
+                return []
+        return []
+
     def loaded(self) -> list[str]:
         raise NotImplementedError
 
     def synth(self, text, language="Spanish", instruct=None, clone=None,
-              temperature=0.7, max_tokens=None, seed=None):
+              temperature=0.7, max_tokens=None, seed=None, voice=None):
         """Return (audio_float32_mono: np.ndarray, sample_rate: int)."""
         raise NotImplementedError

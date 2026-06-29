@@ -87,16 +87,16 @@ def parse_tagged(text):
     return segs
 
 
-def synth_long(backend, text, language, instruct, clone, temperature, gap_ms=120):
+def synth_long(backend, text, language, instruct, clone, temperature, voice=None, gap_ms=120):
     pieces, sr = [], 24000
     for s in split_sentences(text):
-        audio, sr = backend.synth(s, language, instruct, clone, temperature)
+        audio, sr = backend.synth(s, language, instruct, clone, temperature, voice=voice)
         pieces.append(audio)
         pieces.append(np.zeros(int(sr * gap_ms / 1000), dtype=np.float32))
     return (np.concatenate(pieces) if pieces else np.zeros(1, dtype=np.float32)), sr
 
 
-def synth_tagged(backend, text, base_instruct, language, temperature, seed, gap_ms=120):
+def synth_tagged(backend, text, base_instruct, language, temperature, seed, voice=None, gap_ms=120):
     """Multi-emotion: base voice (system prompt) + per-segment [tag] sub-prompts."""
     base = base_instruct or "A natural, clear voice."
     pieces, sr = [], 24000
@@ -104,7 +104,7 @@ def synth_tagged(backend, text, base_instruct, language, temperature, seed, gap_
         emo = TAG_INSTRUCTS.get(tag, "") if tag else ""
         instruct = f"{base}, {emo}" if emo else base
         audio, sr = backend.synth(seg_text, language=language, instruct=instruct,
-                                  temperature=temperature, seed=seed)
+                                  temperature=temperature, seed=seed, voice=voice)
         audio = trim_silence(audio, sr)
         pieces.append(audio)
         pieces.append(np.zeros(int(sr * gap_ms / 1000), dtype=np.float32))
@@ -123,6 +123,10 @@ def create_app(backend):
         return jsonify({"data": [{"id": x, "object": "model"} for x in backend.loaded()],
                         "backend": backend.name})
 
+    @app.route("/v1/voices")
+    def voices():
+        return jsonify({"voices": backend.speakers()})
+
     @app.route("/v1/audio/speech", methods=["POST"])
     def speech():
         data = request.get_json(force=True)
@@ -136,17 +140,18 @@ def create_app(backend):
         split = data.get("split", True)
         max_tokens = data.get("max_tokens")
         seed = int(data.get("seed", DEFAULT_SEED))
+        voice = data.get("voice") or None
         try:
             with _lock:
                 t0 = time.time()
                 if has_tags(text) and not clone:
-                    audio, sr = synth_tagged(backend, text, instruct, language, temperature, seed)
+                    audio, sr = synth_tagged(backend, text, instruct, language, temperature, seed, voice=voice)
                     mode = "tagged"
                 elif split and not max_tokens:
-                    audio, sr = synth_long(backend, text, language, instruct, clone, temperature)
+                    audio, sr = synth_long(backend, text, language, instruct, clone, temperature, voice=voice)
                     mode = "split"
                 else:
-                    audio, sr = backend.synth(text, language, instruct, clone, temperature, max_tokens)
+                    audio, sr = backend.synth(text, language, instruct, clone, temperature, max_tokens, voice=voice)
                     mode = "single"
                 print(f"[speech/{mode}] {len(text)}chars -> {len(audio)/sr:.1f}s in "
                       f"{time.time()-t0:.1f}s ({backend.name})", flush=True)

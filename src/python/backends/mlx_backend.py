@@ -31,7 +31,7 @@ class MlxBackend(TTSBackend):
         return list(self._cache.keys())
 
     def synth(self, text, language="Spanish", instruct=None, clone=None,
-              temperature=0.7, max_tokens=None, seed=None):
+              temperature=0.7, max_tokens=None, seed=None, voice=None):
         if clone:
             raise RuntimeError(
                 "Cloning is not supported on the MLX backend (bug in mlx-audio 0.3.0rc1). "
@@ -40,8 +40,14 @@ class MlxBackend(TTSBackend):
         if seed is not None:
             mx.random.seed(int(seed))  # fixed seed -> stable voice across segments
         mt = max_tokens or cap_tokens(text)
-        model = self._model("voicedesign")
-        results = list(model.generate_voice_design(
-            text=text, language=language, instruct=instruct or "A natural, clear voice.",
-            temperature=temperature, max_tokens=mt, verbose=False))
+        if voice:  # named CustomVoice speaker
+            model = self._model("custom")
+            results = list(model.generate_custom_voice(
+                text=text, speaker=voice, instruct=instruct or "", language=language,
+                temperature=temperature, max_tokens=mt, verbose=False))
+        else:
+            model = self._model("voicedesign")
+            results = list(model.generate_voice_design(
+                text=text, language=language, instruct=instruct or "A natural, clear voice.",
+                temperature=temperature, max_tokens=mt, verbose=False))
         return np.array(results[0].audio, dtype=np.float32), model.sample_rate

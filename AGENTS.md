@@ -3,10 +3,12 @@
 Read this before changing code. These are hard rules for any contributor or agent.
 
 ## Icons & emojis — STRICT
-- **0 emojis. Anywhere.** Not in the UI, not in code, comments, logs, docs, commit
+- **0 emojis by default. Anywhere.** Not in the UI, code, comments, logs, docs, commit
   messages or strings.
 - **Web UI: always [Phosphor Icons](https://phosphoricons.com/)** via `<i class="ph ph-<name>"></i>`
   (loaded in `index.html`). Never an emoji, never another icon set.
+- **One exception:** the emotion-tag chips in the Test Voice panel (laughing/sad/excited…)
+  MAY use emojis, because there they read as classic inline-text emoji. Nowhere else.
 - **Terminal / CLI output:** plain ASCII only (e.g. `[ok]`, `[--]`, `UP`, `DOWN`).
   Phosphor is a web font and cannot render in a terminal, so CLI uses words, not glyphs.
 - When you need a new icon, pick the closest Phosphor name and use `ph ph-<name>`.

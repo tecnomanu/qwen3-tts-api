@@ -28,6 +28,15 @@ module.exports = {
     h.sendJson(res, 200, await engine.bridge.listModels());
   },
 
+  'GET /v1/voices': async (ctx, engine, req, res, h) => {
+    if (!(await engine.isUp())) return h.sendJson(res, 200, { voices: [] });
+    try {
+      h.sendJson(res, 200, await engine.bridge.listVoices());
+    } catch {
+      h.sendJson(res, 200, { voices: [] });
+    }
+  },
+
   // model install status (for the panel)
   'GET /api/models': async (ctx, engine, req, res, h) => {
     const { listModels } = require('../../core/modelStatus');
@@ -48,6 +57,7 @@ module.exports = {
     const cfg = ctx.config.all();
     h.sendJson(res, 200, {
       brand: ctx.brand.displayName,
+      version: require('../../../package.json').version,
       host: cfg.host,
       port: cfg.port,
       protected: !!cfg.apiKey,

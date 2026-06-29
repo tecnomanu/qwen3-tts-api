@@ -45,7 +45,7 @@ class TorchBackend(TTSBackend):
         return list(self._cache.keys())
 
     def synth(self, text, language="Spanish", instruct=None, clone=None,
-              temperature=0.7, max_tokens=None, seed=None):
+              temperature=0.7, max_tokens=None, seed=None, voice=None):
         if seed is not None:
             torch.manual_seed(int(seed))  # fixed seed -> stable voice across segments
         lang = (language or "spanish").lower()
@@ -54,10 +54,15 @@ class TorchBackend(TTSBackend):
             wavs, sr = model.generate_voice_clone(
                 text, ref_audio=clone, language=lang, x_vector_only_mode=True
             )
+        elif voice:  # named CustomVoice speaker
+            model = self._model("custom")
+            wavs, sr = model.generate_custom_voice(
+                text, speaker=voice, instruct=instruct or None, language=lang)
         elif instruct:
             model = self._model("voicedesign")
             wavs, sr = model.generate_voice_design(text, instruct=instruct, language=lang)
         else:
-            model = self._model("custom")
-            wavs, sr = model.generate_custom_voice(text, speaker="aiden", language=lang)
+            model = self._model("voicedesign")
+            wavs, sr = model.generate_voice_design(
+                text, instruct="A natural, clear voice.", language=lang)
         return np.asarray(wavs[0], dtype=np.float32), sr

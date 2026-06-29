@@ -85,7 +85,13 @@ audio { width: 100%; margin-top: 12px; }
 pre { background: var(--panel2); border: 1px solid var(--line); border-radius: 8px; padding: 12px; overflow: auto; font-size: 12px; max-height: 260px; }
 .muted { color: var(--muted); font-size: 13px; }
 code { background: var(--panel2); padding: 1px 6px; border-radius: 5px; }
-footer { text-align: center; color: var(--muted); padding: 20px; font-size: 12px; }
+.footer { border-top: 1px solid var(--line); margin-top: 8px; padding: 22px; max-width: 1180px; margin-left: auto; margin-right: auto; }
+.foot-bottom { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+.foot-by { color: var(--muted); font-size: 13px; }
+.foot-by b { color: var(--text); }
+.foot-coffee { display: inline-flex; align-items: center; gap: 6px; color: var(--accent2); text-decoration: none; font-size: 13px; font-weight: 600; border: 1px solid var(--line); border-radius: 999px; padding: 6px 14px; }
+.foot-coffee:hover { border-color: var(--accent2); }
+.foot-note { color: var(--muted); font-size: 12px; margin: 10px 0 0; }
 
 /* header status (right side) */
 .status-right { display: flex; align-items: center; gap: 8px; color: var(--muted); font-size: 13px; }

@@ -28,15 +28,15 @@
         <textarea id="text" rows="3" placeholder="Type text. Insert [emotion] tags to change feeling mid-audio…">[laughing] Ha, ha, ha, this is amazing! [sad] But sometimes things just don't work out. [excited] And then, it all came together!</textarea>
         <div class="chips-label">Insert emotion tag (applies until the next tag):</div>
         <div class="chips" id="chips">
-          <button type="button" class="chip" data-tag="laughing"><i class="ph ph-smiley-wink"></i> laughing</button>
-          <button type="button" class="chip" data-tag="happy"><i class="ph ph-smiley"></i> happy</button>
-          <button type="button" class="chip" data-tag="sad"><i class="ph ph-smiley-sad"></i> sad</button>
-          <button type="button" class="chip" data-tag="crying"><i class="ph ph-drop"></i> crying</button>
-          <button type="button" class="chip" data-tag="excited"><i class="ph ph-lightning"></i> excited</button>
-          <button type="button" class="chip" data-tag="angry"><i class="ph ph-flame"></i> angry</button>
-          <button type="button" class="chip" data-tag="whisper"><i class="ph ph-wind"></i> whisper</button>
-          <button type="button" class="chip" data-tag="calm"><i class="ph ph-leaf"></i> calm</button>
-          <button type="button" class="chip" data-tag="narrator"><i class="ph ph-microphone"></i> narrator</button>
+          <button type="button" class="chip" data-tag="laughing">😂 laughing</button>
+          <button type="button" class="chip" data-tag="happy">😄 happy</button>
+          <button type="button" class="chip" data-tag="sad">😢 sad</button>
+          <button type="button" class="chip" data-tag="crying">😭 crying</button>
+          <button type="button" class="chip" data-tag="excited">⚡ excited</button>
+          <button type="button" class="chip" data-tag="angry">😠 angry</button>
+          <button type="button" class="chip" data-tag="whisper">🤫 whisper</button>
+          <button type="button" class="chip" data-tag="calm">😌 calm</button>
+          <button type="button" class="chip" data-tag="narrator">🎙️ narrator</button>
         </div>
         <div class="row">
           <label class="grow">Language
@@ -48,6 +48,10 @@
             </select>
           </label>
           <label>Temp <input id="temp" type="number" step="0.1" value="0.7" /></label>
+        </div>
+        <div class="row">
+          <label class="grow">Voice (preset speaker — optional, needs the CustomVoice model)
+            <select id="voice"><option value="">— none (use base voice) —</option></select></label>
         </div>
         <div class="row">
           <label class="grow">Base voice (system prompt — kept across the whole audio, English works best)
@@ -114,7 +118,15 @@
     </aside>
   </main>
 
-  <footer>QVox · localhost — <span id="foot"></span></footer>
+  <footer class="footer">
+    <div class="foot-bottom">
+      <span class="foot-by">&copy; <b>tecno.manu</b> (Manuel Bruña) · <span id="foot-ver"></span></span>
+      <a class="foot-coffee" href="https://cafecito.app/tecnomanu" target="_blank" rel="noopener">
+        <i class="ph ph-coffee"></i> Buy me a coffee / Invitame un café
+      </a>
+    </div>
+    <p class="foot-note">Open source · MIT license · <span id="foot-eng"></span></p>
+  </footer>
   <script src="/app.js"></script>
 </body>
 </html>

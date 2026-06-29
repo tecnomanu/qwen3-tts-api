@@ -61,6 +61,10 @@ class PythonBridge {
   listModels() {
     return this._request('GET', '/v1/models', null, { timeout: 8000 });
   }
+
+  listVoices() {
+    return this._request('GET', '/v1/voices', null, { timeout: 8000 });
+  }
 }
 
 module.exports = { PythonBridge };
