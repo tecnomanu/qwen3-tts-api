@@ -32,7 +32,7 @@ module.exports = async function setup(ctx) {
   logger.info('System dependencies:');
   for (const [bin, why] of checks) {
     // eslint-disable-next-line no-console
-    console.log(`  ${has(bin) ? '✅' : '❌'} ${bin.padEnd(8)} ${why}`);
+    console.log(`  ${has(bin) ? '[ok]' : '[--]'} ${bin.padEnd(8)} ${why}`);
   }
 
   // likely backend

@@ -68,7 +68,7 @@ def render_bar():
         time.sleep(0.5)
 
 
-print(f"⬇️  {repo}\n   -> {dest}", flush=True)
+print(f"Downloading {repo}\n   -> {dest}", flush=True)
 worker = threading.Thread(target=render_bar, daemon=True)
 worker.start()
 try:
@@ -76,4 +76,4 @@ try:
 finally:
     stop.set()
     worker.join(timeout=1)
-print(f"\n  ✅ complete: {dest}", flush=True)
+print(f"\n  complete: {dest}", flush=True)

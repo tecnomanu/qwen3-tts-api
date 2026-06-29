@@ -38,9 +38,9 @@ async function refresh() {
 }
 
 const BADGE = {
-  installed: ['✅', 'installed', '#7ef0c2'],
-  cached: ['☁️', 'cached', '#6ea8fe'],
-  not_installed: ['⬇️', 'not installed', '#8b93a7'],
+  installed: ['<i class="ph ph-check-circle"></i>', 'installed', '#7ef0c2'],
+  cached: ['<i class="ph ph-cloud"></i>', 'cached', '#6ea8fe'],
+  not_installed: ['<i class="ph ph-download-simple"></i>', 'not installed', '#8b93a7'],
 };
 
 async function renderModels() {

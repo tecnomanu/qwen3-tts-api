@@ -26,7 +26,7 @@ module.exports = async function serve(ctx, { flags }) {
   logger.info(`Panel:  ${url}/`);
   logger.info(`API:    ${url}/v1/audio/speech`);
   if (!cfg.apiKey && cfg.host !== '127.0.0.1') {
-    logger.warn('⚠️  Exposing on the network WITHOUT an api key. Set one with: ' + brand.cli + ' config set apiKey <key>');
+    logger.warn('Exposing on the network WITHOUT an api key. Set one with: ' + brand.cli + ' config set apiKey <key>');
   }
 
   // keep alive + clean shutdown

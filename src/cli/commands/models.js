@@ -6,7 +6,6 @@ const { spawn } = require('child_process');
 const { EngineManager } = require('../../engine/EngineManager');
 const { listModels } = require('../../core/modelStatus');
 
-const ICON = { installed: '✅', cached: '☁️ ', not_installed: '⬇️ ' };
 const LABEL = { installed: 'installed', cached: 'cached', not_installed: 'not installed' };
 
 module.exports = async function models(ctx, { positionals }) {
@@ -37,13 +36,13 @@ module.exports = async function models(ctx, { positionals }) {
     // eslint-disable-next-line no-console
     console.log(`  ${'ROLE'.padEnd(12)}${'STATUS'.padEnd(22)}${'SIZE'.padEnd(9)}MODEL`);
     for (const r of rows) {
-      const label = `${ICON[r.state]} ${LABEL[r.state]}${r.loaded ? ' · loaded' : ''}`;
+      const label = `${LABEL[r.state]}${r.loaded ? ' · loaded' : ''}`;
       const size = r.sizeMB ? `${r.sizeMB}MB` : '-';
       // eslint-disable-next-line no-console
-      console.log(`  ${r.role.padEnd(12)}${label.padEnd(22)}${size.padEnd(9)}${r.id}`);
+      console.log(`  ${r.role.padEnd(12)}${label.padEnd(20)}${size.padEnd(9)}${r.id}`);
     }
     // eslint-disable-next-line no-console
-    console.log('\n  ✅ installed (qvox dir)   ☁️ cached (HF)   ⬇️ not installed');
+    console.log('\n  installed = in qvox dir   cached = in HF cache   not installed');
     return;
   }
 

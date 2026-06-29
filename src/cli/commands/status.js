@@ -15,7 +15,7 @@ ${brand.displayName} status
   config     : ${paths.configFile}
   host:port  : ${cfg.host}:${cfg.port}
   api key    : ${cfg.apiKey ? 'yes (protected)' : 'no (open)'}
-  engine     : backend=${cfg.engine.backend} port=${cfg.engine.port}  ->  ${up ? '🟢 UP' : '🔴 DOWN'}
+  engine     : backend=${cfg.engine.backend} port=${cfg.engine.port}  ->  ${up ? 'UP' : 'DOWN'}
   models dir : ${paths.modelsDir}
 `);
   if (up) {

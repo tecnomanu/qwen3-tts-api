@@ -5,6 +5,8 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>QVox · panel</title>
   <link rel="stylesheet" href="/styles.css" />
+  <!-- Phosphor Icons (project icon set — no emojis, see AGENTS.md) -->
+  <script src="https://unpkg.com/@phosphor-icons/web@2.1.1"></script>
 </head>
 <body>
   <header>
@@ -24,15 +26,15 @@
       <textarea id="text" rows="3" placeholder="Type text. Insert [emotion] tags to change feeling mid-audio…">[laughing] Ha, ha, ha, this is amazing! [sad] But sometimes things just don't work out. [excited] And then, it all came together!</textarea>
       <div class="chips-label">Insert emotion tag (applies until the next tag):</div>
       <div class="chips" id="chips">
-        <button type="button" class="chip" data-tag="laughing">😂 laughing</button>
-        <button type="button" class="chip" data-tag="happy">😄 happy</button>
-        <button type="button" class="chip" data-tag="sad">😢 sad</button>
-        <button type="button" class="chip" data-tag="crying">😭 crying</button>
-        <button type="button" class="chip" data-tag="excited">⚡ excited</button>
-        <button type="button" class="chip" data-tag="angry">😠 angry</button>
-        <button type="button" class="chip" data-tag="whisper">🤫 whisper</button>
-        <button type="button" class="chip" data-tag="calm">😌 calm</button>
-        <button type="button" class="chip" data-tag="narrator">🎙️ narrator</button>
+        <button type="button" class="chip" data-tag="laughing"><i class="ph ph-smiley-wink"></i> laughing</button>
+        <button type="button" class="chip" data-tag="happy"><i class="ph ph-smiley"></i> happy</button>
+        <button type="button" class="chip" data-tag="sad"><i class="ph ph-smiley-sad"></i> sad</button>
+        <button type="button" class="chip" data-tag="crying"><i class="ph ph-drop"></i> crying</button>
+        <button type="button" class="chip" data-tag="excited"><i class="ph ph-lightning"></i> excited</button>
+        <button type="button" class="chip" data-tag="angry"><i class="ph ph-flame"></i> angry</button>
+        <button type="button" class="chip" data-tag="whisper"><i class="ph ph-wind"></i> whisper</button>
+        <button type="button" class="chip" data-tag="calm"><i class="ph ph-leaf"></i> calm</button>
+        <button type="button" class="chip" data-tag="narrator"><i class="ph ph-microphone"></i> narrator</button>
       </div>
       <div class="row">
         <label class="grow">Language
@@ -60,8 +62,8 @@
         <label class="grow">Clone (path to a reference wav, optional)
           <input id="clone" placeholder="/path/to/reference_voice.wav" /></label>
       </div>
-      <button id="speak">🔊 Generate</button>
-      <a id="download" class="ghost small" download="qvox-audio.wav" style="display:none">⬇️ Download</a>
+      <button id="speak"><i class="ph ph-waveform"></i> Generate</button>
+      <a id="download" class="ghost small" download="qvox-audio.wav" style="display:none"><i class="ph ph-download-simple"></i> Download</a>
       <span id="speak-status" class="muted"></span>
       <audio id="player" controls></audio>
     </section>
@@ -71,7 +73,7 @@
       <section class="card" id="status-card">
         <h2>Status</h2>
         <div id="status" class="kv">loading…</div>
-        <button id="restart" class="ghost small">restart engine</button>
+        <button id="restart" class="ghost small"><i class="ph ph-arrow-clockwise"></i> restart engine</button>
       </section>
 
       <section class="card" id="models-card">
