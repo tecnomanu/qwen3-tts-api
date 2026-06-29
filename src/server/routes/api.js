@@ -18,8 +18,12 @@ module.exports = {
       if (ctx.config.get('engine.autostart')) await engine.start();
       else return h.sendJson(res, 503, { error: 'engine is down' });
     }
-    const { buffer, contentType } = await engine.bridge.speak(body);
-    res.writeHead(200, { 'content-type': contentType || 'audio/wav', 'content-length': buffer.length });
+    const { buffer, contentType, headers } = await engine.bridge.speak(body);
+    const out = { 'content-type': contentType || 'audio/wav', 'content-length': buffer.length };
+    for (const [k, v] of Object.entries(headers || {})) {
+      if (k.toLowerCase().startsWith('x-qvox-')) out[k] = v; // timing metadata for the panel
+    }
+    res.writeHead(200, out);
     res.end(buffer);
   },
 

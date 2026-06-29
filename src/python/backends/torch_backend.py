@@ -4,6 +4,7 @@ Supports voice design, custom voice and CLONING (which MLX can't do today).
 Slower on MPS (no flash-attn) but works everywhere.
 """
 import os
+import time
 import numpy as np
 import torch
 from qwen_tts.inference.qwen3_tts_model import Qwen3TTSModel
@@ -33,12 +34,14 @@ class TorchBackend(TTSBackend):
         src = self.resolve(role)
         if src not in self._cache:
             print(f"[torch] loading {src} ...", flush=True)
+            t = time.time()
             self._cache[src] = Qwen3TTSModel.from_pretrained(
                 src,
                 device_map=self.device,
                 dtype=torch.float16 if self.device in ("mps", "cuda") else torch.float32,
                 attn_implementation="sdpa" if self.device == "mps" else None,
             )
+            self._track_load(src, (time.time() - t) * 1000)
         return self._cache[src]
 
     def loaded(self):

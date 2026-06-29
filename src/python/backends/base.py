@@ -14,6 +14,17 @@ class TTSBackend:
     def __init__(self, models: dict, models_dir: str):
         self.models = models          # {"voicedesign": id|path, "base": ..., "custom": ...}
         self.models_dir = models_dir
+        self._load_events = []        # load timings since last drain (for the panel log)
+
+    def _track_load(self, src: str, ms: float):
+        """Record that a checkpoint was loaded into memory (ms it took)."""
+        self._load_events.append({"src": src.split("/")[-1], "ms": round(ms)})
+
+    def drain_load_events(self) -> list[dict]:
+        """Return the load events recorded since the last call, and reset."""
+        ev = self._load_events
+        self._load_events = []
+        return ev
 
     def resolve(self, role_or_id: str) -> str:
         """Resolve a role ('base') or id to a local path (if present) or the remote id."""

@@ -33,7 +33,7 @@ class PythonBridge {
             if (res.statusCode >= 400) {
               return reject(new Error(`engine ${res.statusCode}: ${buf.toString('utf8').slice(0, 300)}`));
             }
-            if (raw) return resolve({ buffer: buf, contentType: res.headers['content-type'] });
+            if (raw) return resolve({ buffer: buf, contentType: res.headers['content-type'], headers: res.headers });
             try {
               resolve(JSON.parse(buf.toString('utf8') || '{}'));
             } catch (e) {

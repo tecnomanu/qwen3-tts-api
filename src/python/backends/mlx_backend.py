@@ -3,6 +3,7 @@
 NOTE: cloning is broken in mlx-audio 0.3.0rc1 (speaker_encoder uses channels-first
 layout vs channels-last convs). Use the torch backend to clone.
 """
+import time
 import numpy as np
 import mlx.core as mx
 from mlx_audio.tts.utils import load_model
@@ -24,7 +25,9 @@ class MlxBackend(TTSBackend):
         src = self.resolve(role)
         if src not in self._cache:
             print(f"[mlx] loading {src} ...", flush=True)
+            t = time.time()
             self._cache[src] = load_model(src)
+            self._track_load(src, (time.time() - t) * 1000)
         return self._cache[src]
 
     def loaded(self):

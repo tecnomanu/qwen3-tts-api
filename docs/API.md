@@ -16,7 +16,10 @@ JSON body:
 | `temperature` | number | `0.7` | |
 | `split` | bool | `true` | split by sentences (avoids runaway) |
 
-Response: `audio/wav` (binary).
+Response: `audio/wav` (binary), plus timing headers used by the panel log:
+`X-QVox-Mode` (`single`/`split`/`tagged`), `X-QVox-Load-Ms` (model load, `0` if
+already in memory), `X-QVox-Synth-Ms` (synthesis only), `X-QVox-Total-Ms`,
+`X-QVox-Audio-Sec` (audio duration), `X-QVox-Loaded` (checkpoint loaded this call, if any).
 
 ```bash
 curl -X POST http://127.0.0.1:5111/v1/audio/speech \

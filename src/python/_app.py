@@ -143,6 +143,7 @@ def create_app(backend):
         voice = data.get("voice") or None
         try:
             with _lock:
+                backend.drain_load_events()  # clear any stale (e.g. warmup) timings
                 t0 = time.time()
                 if has_tags(text) and not clone:
                     audio, sr = synth_tagged(backend, text, instruct, language, temperature, seed, voice=voice)
@@ -153,9 +154,23 @@ def create_app(backend):
                 else:
                     audio, sr = backend.synth(text, language, instruct, clone, temperature, max_tokens, voice=voice)
                     mode = "single"
-                print(f"[speech/{mode}] {len(text)}chars -> {len(audio)/sr:.1f}s in "
-                      f"{time.time()-t0:.1f}s ({backend.name})", flush=True)
-            return Response(wav_bytes(audio, sr), mimetype="audio/wav")
+                total_ms = (time.time() - t0) * 1000
+                load_events = backend.drain_load_events()
+                load_ms = sum(e["ms"] for e in load_events)
+                synth_ms = max(0.0, total_ms - load_ms)
+                audio_sec = len(audio) / sr
+                loaded_now = ",".join(e["src"] for e in load_events)
+                print(f"[speech/{mode}] {len(text)}chars -> {audio_sec:.1f}s in "
+                      f"{total_ms/1000:.1f}s (load {load_ms/1000:.1f}s, synth {synth_ms/1000:.1f}s, "
+                      f"{backend.name})", flush=True)
+            resp = Response(wav_bytes(audio, sr), mimetype="audio/wav")
+            resp.headers["X-QVox-Mode"] = mode
+            resp.headers["X-QVox-Load-Ms"] = str(round(load_ms))
+            resp.headers["X-QVox-Synth-Ms"] = str(round(synth_ms))
+            resp.headers["X-QVox-Total-Ms"] = str(round(total_ms))
+            resp.headers["X-QVox-Audio-Sec"] = f"{audio_sec:.2f}"
+            resp.headers["X-QVox-Loaded"] = loaded_now
+            return resp
         except Exception as e:
             import traceback
             traceback.print_exc()
