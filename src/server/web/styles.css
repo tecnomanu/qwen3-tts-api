@@ -88,6 +88,31 @@ audio { width: 100%; margin-top: 12px; }
 .dlbar { height: 6px; background: var(--panel2); border: 1px solid var(--line); border-radius: 999px; overflow: hidden; margin: 8px 0 4px; }
 .dlbar-fill { height: 100%; background: var(--accent); border-radius: 999px; transition: width .4s ease; }
 
+/* generate + speed-test row */
+.gen-row { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; }
+.gen-row a.ghost, .gen-row button { margin-top: 8px; }
+#speak-status { margin-left: 2px; }
+
+/* log events console */
+.log-head { display: flex; align-items: center; justify-content: space-between; margin: 14px 0 4px; }
+.log-head button { margin: 0; }
+.log {
+  background: var(--panel2); border: 1px solid var(--line); border-radius: 8px;
+  padding: 8px 10px; max-height: 220px; overflow: auto;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 12px; line-height: 1.6;
+}
+.log-empty { padding: 6px 2px; }
+.log-row { display: flex; gap: 8px; padding: 1px 0; border-bottom: 1px solid #ffffff08; }
+.log-row:last-child { border-bottom: none; }
+.log-ts { color: var(--muted); white-space: nowrap; flex-shrink: 0; }
+.log-msg { color: var(--text); word-break: break-word; }
+.log-req .log-msg { color: var(--accent); }
+.log-load .log-msg { color: #ffcf6e; }
+.log-done .log-msg { color: var(--accent2); }
+.log-ok .log-msg { color: var(--muted); }
+.log-err .log-msg { color: var(--danger); }
+.log-group .log-msg { color: var(--text); font-weight: 600; }
+
 /* confirm modal */
 .modal { position: fixed; inset: 0; background: rgba(0,0,0,.6); display: flex; align-items: center; justify-content: center; z-index: 100; }
 .modal[hidden] { display: none; }

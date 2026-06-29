@@ -80,8 +80,11 @@ async function renderModels() {
         const pct = dl.totalMb ? Math.min(100, Math.round((dl.mb * 100) / dl.totalMb)) : 0;
         action = `<div class="dlbar"><div class="dlbar-fill" style="width:${pct}%"></div></div>
           <div class="muted small">downloading ${dl.mb}${dl.totalMb ? ' / ' + dl.totalMb : ''} MB${dl.totalMb ? ' · ' + pct + '%' : ' …'}</div>`;
-      } else if (m.state !== 'installed') {
-        action = `<button class="ghost small dl-btn" data-role="${m.role}"><i class="ph ph-download-simple"></i> install</button>`;
+      } else if (m.state === 'not_installed') {
+        action = `<button class="ghost small dl-btn" data-role="${m.role}" data-state="not_installed"><i class="ph ph-download-simple"></i> install</button>`;
+      } else if (m.state === 'cached') {
+        // already usable from the HF cache — offer to copy it into the local models dir, but no scary "install"
+        action = `<button class="ghost small dl-btn" data-role="${m.role}" data-state="cached" title="copy from cache into the local models folder"><i class="ph ph-hard-drives"></i> save local</button>`;
       }
       return `<div class="model"><div class="model-top"><b>${m.role}</b>
         <span class="badge" style="color:${color};border-color:${color}33">${icon} ${text}${loaded}</span></div>
@@ -94,8 +97,12 @@ async function renderModels() {
 $('models').addEventListener('click', async (e) => {
   const b = e.target.closest('.dl-btn'); if (!b) return;
   const role = b.dataset.role;
-  const ok = await confirmDialog('Install model',
-    `Download the “${role}” model? It can be a few GB and may take a while depending on your connection.`);
+  const cached = b.dataset.state === 'cached';
+  const ok = cached
+    ? await confirmDialog('Save model locally',
+      `The “${role}” model is already usable from the HuggingFace cache. Copy it into the local models folder so it stays put? This reuses the cache — no re-download.`)
+    : await confirmDialog('Install model',
+      `Download the “${role}” model? It can be a few GB and may take a while depending on your connection.`);
   if (!ok) return;
   await api('/api/models/download', { method: 'POST', body: JSON.stringify({ role }), headers: headers(true) });
   startPoll();
@@ -206,17 +213,73 @@ function currentBody() {
   return b;
 }
 
+// ---------- log events ----------
+function logLine(text, kind = '') {
+  const empty = $('log').querySelector('.log-empty');
+  if (empty) empty.remove();
+  const now = new Date();
+  const ts = now.toTimeString().slice(0, 8) + '.' + String(now.getMilliseconds()).padStart(3, '0');
+  const row = document.createElement('div');
+  row.className = 'log-row' + (kind ? ' log-' + kind : '');
+  row.innerHTML = `<span class="log-ts">${ts}</span><span class="log-msg"></span>`;
+  row.querySelector('.log-msg').textContent = text;
+  $('log').prepend(row);
+}
+$('log-clear').onclick = () => {
+  $('log').innerHTML = '<div class="log-empty muted small">Generate audio to see timing (model load vs synthesis)…</div>';
+};
+
+// read the X-QVox-* timing headers the engine attaches to each speech response
+function timingFromRes(res) {
+  const n = (h) => Number(res.headers.get(h) || 0);
+  return {
+    mode: res.headers.get('x-qvox-mode') || '?',
+    loadMs: n('x-qvox-load-ms'),
+    synthMs: n('x-qvox-synth-ms'),
+    totalMs: n('x-qvox-total-ms'),
+    audioSec: Number(res.headers.get('x-qvox-audio-sec') || 0),
+    loaded: res.headers.get('x-qvox-loaded') || '',
+  };
+}
+
+// run one generation, log timing, return { res, blob, url, timing }
+async function generate(body, label) {
+  logLine(`${label}request sent — ${body.input.length} chars, lang=${body.language}`, 'req');
+  const res = await api('/v1/audio/speech', { method: 'POST', body: JSON.stringify(body), headers: headers(true) });
+  const blob = await res.blob();
+  const t = timingFromRes(res);
+  if (t.loadMs > 0) logLine(`${label}model loaded: ${t.loaded || '?'} (${(t.loadMs / 1000).toFixed(1)}s)`, 'load');
+  else logLine(`${label}model already loaded — no load wait`, 'ok');
+  const rtf = t.audioSec ? (t.synthMs / 1000 / t.audioSec).toFixed(2) : '?';
+  logLine(`${label}audio created: ${t.audioSec.toFixed(1)}s audio · synth ${(t.synthMs / 1000).toFixed(1)}s `
+    + `(mode=${t.mode}, ${rtf}× realtime)`, 'done');
+  return { res, blob, url: URL.createObjectURL(blob), timing: t };
+}
+
+function setPlayer(url) {
+  $('player').src = url; $('player').play().catch(() => {});
+  const dl = $('download'); dl.href = url; dl.download = `qvox-${Date.now()}.wav`; dl.style.display = 'inline-block';
+}
+
+function setBusy(busy) { $('speak').disabled = busy; }
+
+// does the text carry inline [emotion] tags? (matches the engine's routing)
+function hasTags(t) { return /\[[a-zA-Z]{2,12}\]/.test(t); }
+
 $('speak').onclick = async () => {
   const body = currentBody();
+  if (!body.input.trim()) { $('speak-status').textContent = 'type some text first'; return; }
+  // smart routing (mirrors the engine): tags + no clone -> per-segment emotions, else plain
+  const tagged = hasTags(body.input) && !body.clone;
+  logLine(tagged ? 'tags detected -> emotions per segment' : 'no tags -> plain (direct)', tagged ? 'group' : 'ok');
   $('speak-status').textContent = 'generating…';
-  const t0 = Date.now();
+  setBusy(true);
   try {
-    const res = await api('/v1/audio/speech', { method: 'POST', body: JSON.stringify(body), headers: headers(true) });
-    const url = URL.createObjectURL(await res.blob());
-    $('player').src = url; $('player').play();
-    const dl = $('download'); dl.href = url; dl.download = `qvox-${Date.now()}.wav`; dl.style.display = 'inline-block';
-    $('speak-status').textContent = `done (${((Date.now() - t0) / 1000).toFixed(1)}s)`;
-  } catch (e) { $('speak-status').textContent = 'error: ' + e.message; }
+    const { url, timing } = await generate(body, '');
+    setPlayer(url);
+    $('speak-status').textContent = `done (${(timing.totalMs / 1000).toFixed(1)}s)`;
+  } catch (e) { $('speak-status').textContent = 'error: ' + e.message; logLine('error: ' + e.message, 'err'); }
+  setBusy(false);
 };
 
 // ---------- API examples ----------

@@ -65,10 +65,18 @@
           <label class="grow">Clone (path to a reference wav, optional)
             <input id="clone" placeholder="/path/to/reference_voice.wav" /></label>
         </div>
-        <button id="speak"><i class="ph ph-waveform"></i> Generate</button>
-        <a id="download" class="ghost small" download="qvox-audio.wav" style="display:none"><i class="ph ph-download-simple"></i> Download</a>
-        <span id="speak-status" class="muted"></span>
+        <div class="gen-row">
+          <button id="speak"><i class="ph ph-waveform"></i> Generate</button>
+          <a id="download" class="ghost small" download="qvox-audio.wav" style="display:none"><i class="ph ph-download-simple"></i> Download</a>
+          <span id="speak-status" class="muted"></span>
+        </div>
         <audio id="player" controls></audio>
+
+        <div class="log-head">
+          <span class="chips-label" style="margin:0"><i class="ph ph-list-bullets"></i> Log events</span>
+          <button id="log-clear" class="ghost small" title="clear"><i class="ph ph-eraser"></i> clear</button>
+        </div>
+        <div id="log" class="log"><div class="log-empty muted small">Generate audio to see timing (model load vs synthesis)…</div></div>
       </section>
 
       <section class="card" id="examples-card">
@@ -103,7 +111,12 @@
 
       <section class="card" id="models-card">
         <h2>Models</h2>
+        <p class="muted small">The engine picks the model automatically — you don't switch by hand:
+          <b>Voicedesign</b> = voice from the <i>Base voice</i> description (default);
+          <b>Custom</b> = a named preset <i>Voice</i>; <b>Base</b> = used only when you set a <i>Clone</i> path.</p>
         <div id="models" class="kv">—</div>
+        <p class="muted small"><b>installed</b> = saved on disk · <b>cached</b> = ready (in HF cache) ·
+          <span class="loaded">loaded</span> = in memory now (no load wait).</p>
       </section>
 
       <section class="card" id="apikey-card">
