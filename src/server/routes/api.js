@@ -88,4 +88,16 @@ module.exports = {
     await engine.restart();
     h.sendJson(res, 200, { ok: true });
   },
+
+  'POST /api/models/download': async (ctx, engine, req, res, h) => {
+    const downloads = require('../../core/downloads');
+    const { role } = await h.readJson(req);
+    if (!role) return h.sendJson(res, 400, { error: 'missing role' });
+    h.sendJson(res, 200, downloads.start(ctx, role));
+  },
+
+  'GET /api/models/download': async (ctx, engine, req, res, h) => {
+    const downloads = require('../../core/downloads');
+    h.sendJson(res, 200, downloads.current());
+  },
 };

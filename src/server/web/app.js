@@ -46,6 +46,13 @@ async function refresh() {
   }
   renderModels();
   renderVoices();
+  // resume the progress poll if a download is already running (e.g., after reload)
+  if (!window._dlPoll) {
+    try {
+      const d = await (await api('/api/models/download')).json();
+      if (d.status === 'downloading') { dl = d; startPoll(); }
+    } catch { /* ignore */ }
+  }
 }
 
 async function renderVoices() {
@@ -59,6 +66,8 @@ async function renderVoices() {
   } catch { /* ignore */ }
 }
 
+let dl = null; // active download state
+
 async function renderModels() {
   try {
     const { models } = await (await api('/api/models')).json();
@@ -66,11 +75,58 @@ async function renderModels() {
       const [icon, text, color] = BADGE[m.state] || BADGE.not_installed;
       const size = m.sizeMB ? ` · ${m.sizeMB} MB` : '';
       const loaded = m.loaded ? ' <span class="loaded">loaded</span>' : '';
+      let action = '';
+      if (dl && dl.role === m.role && dl.status === 'downloading') {
+        const pct = dl.totalMb ? Math.min(100, Math.round((dl.mb * 100) / dl.totalMb)) : 0;
+        action = `<div class="dlbar"><div class="dlbar-fill" style="width:${pct}%"></div></div>
+          <div class="muted small">downloading ${dl.mb}${dl.totalMb ? ' / ' + dl.totalMb : ''} MB${dl.totalMb ? ' · ' + pct + '%' : ' …'}</div>`;
+      } else if (m.state !== 'installed') {
+        action = `<button class="ghost small dl-btn" data-role="${m.role}"><i class="ph ph-download-simple"></i> install</button>`;
+      }
       return `<div class="model"><div class="model-top"><b>${m.role}</b>
         <span class="badge" style="color:${color};border-color:${color}33">${icon} ${text}${loaded}</span></div>
-        <div class="model-id">${m.id}${size}</div></div>`;
+        <div class="model-id">${m.id}${size}</div>${action}</div>`;
     }).join('');
   } catch (e) { $('models').innerHTML = `<span class="muted">${e.message}</span>`; }
+}
+
+// install button -> confirm -> download -> poll progress
+$('models').addEventListener('click', async (e) => {
+  const b = e.target.closest('.dl-btn'); if (!b) return;
+  const role = b.dataset.role;
+  const ok = await confirmDialog('Install model',
+    `Download the “${role}” model? It can be a few GB and may take a while depending on your connection.`);
+  if (!ok) return;
+  await api('/api/models/download', { method: 'POST', body: JSON.stringify({ role }), headers: headers(true) });
+  startPoll();
+});
+
+function startPoll() {
+  if (window._dlPoll) return;
+  window._dlPoll = setInterval(async () => {
+    try {
+      dl = await (await api('/api/models/download')).json();
+      renderModels();
+      if (dl.status === 'done' || dl.status === 'error') {
+        clearInterval(window._dlPoll); window._dlPoll = null;
+        const err = dl.status === 'error' ? dl.error : null;
+        dl = null;
+        renderModels(); renderVoices();
+        if (err) alert('Download error: ' + err);
+      }
+    } catch { /* ignore */ }
+  }, 1000);
+}
+
+function confirmDialog(title, text) {
+  return new Promise((resolve) => {
+    $('modal-title').textContent = title;
+    $('modal-text').textContent = text;
+    $('modal').hidden = false;
+    const done = (v) => { $('modal').hidden = true; resolve(v); };
+    $('modal-ok').onclick = () => done(true);
+    $('modal-cancel').onclick = () => done(false);
+  });
 }
 
 // ---------- API key management ----------
