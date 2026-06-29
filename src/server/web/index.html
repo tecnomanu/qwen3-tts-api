@@ -25,7 +25,9 @@
     <div class="main-col">
       <section class="card" id="test-card">
         <h2>Test voice</h2>
-        <textarea id="text" rows="3" placeholder="Type text. Insert [emotion] tags to change feeling mid-audio…">[laughing] Ha, ha, ha, this is amazing! [sad] But sometimes things just don't work out. [excited] And then, it all came together!</textarea>
+        <div class="chips-label">Presets (set text + base voice + language):</div>
+        <div class="presets" id="presets"></div>
+        <textarea id="text" rows="3" placeholder="Type text. Insert [emotion] tags to change feeling mid-audio…">¡Estás escuchando los clásicos de La 100, la radio más escuchada de Buenos Aires! Todos los éxitos, todo el día.</textarea>
         <div class="chips-label">Insert emotion tag (applies until the next tag):</div>
         <div class="chips" id="chips">
           <button type="button" class="chip" data-tag="laughing">😂 laughing</button>
@@ -119,13 +121,14 @@
   </main>
 
   <footer class="footer">
-    <div class="foot-bottom">
-      <span class="foot-by">&copy; <b>tecno.manu</b> (Manuel Bruña) · <span id="foot-ver"></span></span>
+    <span class="foot-brand"><b>QVox</b> <span id="foot-ver"></span></span>
+    <span class="foot-note">Open source · MIT license</span>
+    <span class="foot-right">
+      <span class="foot-by">&copy; <b>tecno.manu</b> (Manuel Bruña)</span>
       <a class="foot-coffee" href="https://cafecito.app/tecnomanu" target="_blank" rel="noopener">
         <i class="ph ph-coffee"></i> Buy me a coffee / Invitame un café
       </a>
-    </div>
-    <p class="foot-note">Open source · MIT license · <span id="foot-eng"></span></p>
+    </span>
   </footer>
   <script src="/app.js"></script>
 </body>

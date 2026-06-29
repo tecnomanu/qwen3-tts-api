@@ -39,7 +39,6 @@ async function refresh() {
     $('engine').value = s.engine.backend;
     $('prot-status').innerHTML = `protected: <b>${s.protected ? 'yes' : 'no'}</b>`;
     $('foot-ver').textContent = 'v' + (s.version || '?');
-    $('foot-eng').textContent = `backend ${s.engine.backend}`;
     renderKey();
     renderExamples();
   } catch (e) {
@@ -105,6 +104,32 @@ $('restart').onclick = async () => {
   $('restart').innerHTML = '<i class="ph ph-arrow-clockwise"></i> apply / restart';
   refresh();
 };
+
+// ---------- presets (set text + base voice + language; no clone, no tags) ----------
+const PRESETS = [
+  { name: 'Radio AR', lang: 'Spanish', instruct: 'A excited Argentine man, rio platense accent', text: '¡Estás escuchando los clásicos de La 100, la radio más escuchada de Buenos Aires! Todos los éxitos, todo el día.' },
+  { name: 'Cuento ES', lang: 'Spanish', instruct: 'A warm storyteller, gentle and slow, neutral Spanish', text: 'Había una vez, en un pueblo muy lejano, una niña que soñaba con poder volar.' },
+  { name: 'News EN', lang: 'English', instruct: 'A professional male news anchor, neutral American accent', text: "Good evening. Here are tonight's top stories." },
+  { name: 'Podcast EN', lang: 'English', instruct: 'A friendly podcast host, warm casual tone', text: 'Hey everyone, welcome back to the show. Today we have a great episode for you.' },
+  { name: 'Calm EN', lang: 'English', instruct: 'A soft calm female voice, soothing and slow', text: 'Take a deep breath. Everything is going to be okay.' },
+  { name: 'Hype EN', lang: 'English', instruct: 'An energetic hype announcer, loud and excited', text: "Are you ready? Let's go!" },
+  { name: 'Brasil PT', lang: 'Portuguese', instruct: 'A cheerful Brazilian man, Rio de Janeiro accent', text: 'E aí, galera! Sejam muito bem-vindos ao programa de hoje.' },
+  { name: 'Français', lang: 'French', instruct: 'A warm French man, Parisian accent', text: 'Bonjour à tous et bienvenue dans notre émission.' },
+  { name: 'Italiano', lang: 'Italian', instruct: 'A passionate Italian man, warm tone', text: 'Ciao a tutti, benvenuti! Oggi vi racconto una storia.' },
+  { name: 'Deutsch', lang: 'German', instruct: 'A calm German male voice, clear and friendly', text: 'Guten Abend und herzlich willkommen zur Sendung.' },
+];
+$('presets').innerHTML = PRESETS.map((p, i) =>
+  `<button type="button" class="preset" data-i="${i}"><i class="ph ph-quotes"></i> ${p.name}</button>`).join('');
+$('presets').addEventListener('click', (e) => {
+  const b = e.target.closest('.preset'); if (!b) return;
+  const p = PRESETS[+b.dataset.i];
+  $('text').value = p.text;
+  $('instruct').value = p.instruct;
+  $('lang').value = p.lang;
+  $('clone').value = '';
+  $('voice').value = '';
+  renderExamples();
+});
 
 // ---------- emotion tags ----------
 $('chips').addEventListener('click', (e) => {
