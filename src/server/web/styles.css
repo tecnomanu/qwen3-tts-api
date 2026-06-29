@@ -94,9 +94,8 @@ code { background: var(--panel2); padding: 1px 6px; border-radius: 5px; }
 /* footer: brand+version (left) · MIT (center) · author+coffee (right) */
 .footer { border-top: 1px solid var(--line); margin: 8px auto 0; padding: 20px 22px; max-width: 1180px;
   display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap; }
-.foot-brand { color: var(--text); font-size: 14px; }
-.foot-brand b { color: var(--accent); }
-.foot-note { color: var(--muted); font-size: 12px; margin: 0; }
+.foot-left { color: var(--muted); font-size: 13px; }
+.foot-left b { color: var(--accent); }
 .foot-right { display: inline-flex; align-items: center; gap: 12px; }
 .foot-by { color: var(--muted); font-size: 13px; }
 .foot-by b { color: var(--text); }
