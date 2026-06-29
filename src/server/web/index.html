@@ -27,7 +27,7 @@
         <h2>Test voice</h2>
         <div class="chips-label">Presets (set text + base voice + language):</div>
         <div class="presets" id="presets"></div>
-        <textarea id="text" rows="3" placeholder="Type text. Insert [emotion] tags to change feeling mid-audio…">¡Estás escuchando los clásicos de La 100, la radio más escuchada de Buenos Aires! Todos los éxitos, todo el día.</textarea>
+        <textarea id="text" rows="3" placeholder="Type text. Insert [emotion] tags to change feeling mid-audio…">Hey everyone, welcome back to the show. Today we have a great episode for you.</textarea>
         <div class="chips-label">Insert emotion tag (applies until the next tag):</div>
         <div class="chips" id="chips">
           <button type="button" class="chip" data-tag="laughing">😂 laughing</button>
@@ -43,7 +43,7 @@
         <div class="row">
           <label class="grow">Language
             <select id="lang">
-              <option>Spanish</option><option>English</option><option>Chinese</option>
+              <option selected>English</option><option>Spanish</option><option>Chinese</option>
               <option>Japanese</option><option>Korean</option><option>German</option>
               <option>French</option><option>Russian</option><option>Portuguese</option>
               <option>Italian</option>
@@ -57,7 +57,7 @@
         </div>
         <div class="row">
           <label class="grow">Base voice (system prompt — kept across the whole audio, English works best)
-            <input id="instruct" value="A warm Argentine man, Buenos Aires accent" /></label>
+            <input id="instruct" value="A friendly podcast host, warm casual tone" /></label>
         </div>
         <p class="muted">Emotion is set per segment with the [tags] above. The base voice + a fixed seed keep the same voice.</p>
         <div class="row">
