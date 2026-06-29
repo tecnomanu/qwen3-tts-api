@@ -41,11 +41,9 @@ main {
   display: grid; grid-template-columns: minmax(0, 1fr) 360px;
   align-items: start; gap: 16px; padding: 22px; max-width: 1180px; margin: 0 auto;
 }
-.side { display: flex; flex-direction: column; gap: 16px; }
-.main-col { position: sticky; top: 84px; }
+.side, .main-col { display: flex; flex-direction: column; gap: 16px; }
 @media (max-width: 860px) {
   main { grid-template-columns: 1fr; }
-  .main-col { position: static; }
 }
 .card { background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius); padding: 18px; }
 .card h2 { margin: 0 0 12px; font-size: 15px; color: var(--accent); text-transform: uppercase; letter-spacing: 1px; }
@@ -88,3 +86,24 @@ pre { background: var(--panel2); border: 1px solid var(--line); border-radius: 8
 .muted { color: var(--muted); font-size: 13px; }
 code { background: var(--panel2); padding: 1px 6px; border-radius: 5px; }
 footer { text-align: center; color: var(--muted); padding: 20px; font-size: 12px; }
+
+/* header status (right side) */
+.status-right { display: flex; align-items: center; gap: 8px; color: var(--muted); font-size: 13px; }
+
+/* engine selector */
+.field { display: flex; flex-direction: column; gap: 4px; font-size: 12px; color: var(--muted); margin: 12px 0; }
+
+/* API key card */
+.key-row { display: flex; gap: 6px; margin: 8px 0; }
+#keyview { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; letter-spacing: .5px; }
+.key-actions { display: flex; gap: 8px; }
+.key-actions button { margin-top: 0; }
+
+/* API examples */
+.tabs { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 8px; }
+.tab { background: transparent; border: 1px solid var(--line); color: var(--muted); border-radius: 6px; padding: 4px 11px; font-size: 12px; font-weight: 600; cursor: pointer; margin: 0; }
+.tab.active { color: var(--accent); border-color: var(--accent); }
+.code-wrap { position: relative; }
+.code-wrap pre { background: var(--panel2); border: 1px solid var(--line); border-radius: 8px; padding: 12px; overflow: auto; font-size: 12px; max-height: 320px; margin: 0; }
+.copy-btn { position: absolute; top: 8px; right: 8px; background: var(--panel); border: 1px solid var(--line); color: var(--text); border-radius: 6px; padding: 5px 9px; font-size: 12px; cursor: pointer; margin: 0; }
+.copy-btn:hover { color: var(--accent); border-color: var(--accent); }
