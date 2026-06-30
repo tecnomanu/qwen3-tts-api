@@ -54,5 +54,13 @@ curl -X POST http://127.0.0.1:5111/v1/audio/speech \
 
 See [docs/API.md](docs/API.md), [docs/CLI.md](docs/CLI.md), [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
 
+## Agent skill (integrate it elsewhere)
+
+`skills/qvox-tts/` is a Claude Code skill that teaches an agent how to call this API and use the
+inline `[emotion]` tags when building **other** apps. Install it with
+`cp -r skills/qvox-tts ~/.claude/skills/`. The portable tag reference
+([skills/qvox-tts/references/emotion-tags.md](skills/qvox-tts/references/emotion-tags.md)) is
+self-contained — paste it into any prompt or LLM context.
+
 ## License
 MIT · tecnomanu. Qwen3-TTS models: Apache-2.0 (Alibaba).
