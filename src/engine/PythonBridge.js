@@ -58,6 +58,14 @@ class PythonBridge {
     return this._request('POST', '/v1/audio/speech', opts, { raw: true });
   }
 
+  /**
+   * Force the model resident. Generous timeout on purpose: this is slow
+   * exactly when it matters most, on a machine that has paged the weights out.
+   */
+  warmup() {
+    return this._request('POST', '/v1/warmup', {}, { timeout: 120000 });
+  }
+
   listModels() {
     return this._request('GET', '/v1/models', null, { timeout: 8000 });
   }

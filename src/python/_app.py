@@ -169,6 +169,35 @@ def create_app(backend):
     def voices():
         return jsonify({"voices": backend.speakers()})
 
+    @app.route("/v1/warmup", methods=["GET", "POST"])
+    def warmup():
+        """Make the model ready before anyone is waiting on it.
+
+        On a machine under memory pressure the weights get compressed out
+        between requests, and the next generation pays to decompress them —
+        measured here at 8s against 44s for the same line, with the engine
+        reporting `load 0.0s` both times because nothing was reloading: the
+        pages were simply cold.
+
+        A client that knows a request is coming — a voice UI, the moment the
+        user presses to talk — can call this and spend that cost while the
+        user is still speaking instead of after.
+        """
+        t0 = time.time()
+        try:
+            with _lock:
+                backend.drain_load_events()
+                backend.synth("Hola.", language="Spanish",
+                              instruct="A neutral voice.", max_tokens=64)
+                load_ms = sum(e["ms"] for e in backend.drain_load_events())
+            total_ms = (time.time() - t0) * 1000
+            print(f"[warmup] ready in {total_ms/1000:.1f}s "
+                  f"(load {load_ms/1000:.1f}s, {backend.name})", flush=True)
+            return jsonify({"ok": True, "ms": round(total_ms), "backend": backend.name})
+        except Exception as e:
+            print(f"[warmup] failed: {e}", flush=True)
+            return jsonify({"ok": False, "error": str(e)}), 500
+
     @app.route("/v1/audio/speech", methods=["POST"])
     def speech():
         data = request.get_json(force=True)
