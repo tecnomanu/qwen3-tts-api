@@ -42,6 +42,11 @@ class EngineManager {
       QVOX_MODEL_VOICEDESIGN: c.models.voicedesign,
       QVOX_MODEL_BASE: c.models.base,
       QVOX_MODEL_CUSTOM: c.models.custom,
+      // Which model the startup warmup should load. Without this it warms
+      // VoiceDesign — 9.5 GB — and then the first real request loads
+      // CustomVoice on top of it, because that is what a configured speaker
+      // uses. Two checkpoints resident, one of them never touched.
+      QVOX_WARMUP_VOICE: c.tts?.defaultVoice || '',
       QVOX_WARMUP: c.engine.warmup ? '1' : '0',
       HF_HUB_ENABLE_HF_TRANSFER: c.hf.enableHfTransfer ? '1' : '0',
       ...(c.hf.token ? { HF_TOKEN: c.hf.token } : {}),

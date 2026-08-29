@@ -293,11 +293,25 @@ def run(backend):
     app = create_app(backend)
     if os.environ.get("QVOX_WARMUP", "1") == "1":
         try:
-            print("--- warmup ---", flush=True)
+            # Warm the checkpoint that is actually going to answer. A named
+            # speaker lives in CustomVoice and a description in VoiceDesign;
+            # warming the wrong one costs the RAM of both and saves nothing.
+            voice = os.environ.get("QVOX_WARMUP_VOICE") or None
+            print(f"--- warmup{f' (voice: {voice})' if voice else ''} ---", flush=True)
             backend.synth("Hello.", language="English",
-                          instruct="A neutral voice.", max_tokens=192)
+                          instruct="A neutral voice.", max_tokens=192,
+                          voice=voice)
             print("--- warmup ok ---", flush=True)
         except Exception as e:
             print(f"--- warmup skip: {e} ---", flush=True)
     print(f"engine[{backend.name}] on :{port}", flush=True)
-    app.run(host="0.0.0.0", port=port, threaded=True)
+    # Single-threaded on purpose. MLX keeps a thread-local compiler cache whose
+    # destructor segfaults when the owning thread exits — and with a thread per
+    # request, that is every request: the engine answered in 2s and then died,
+    # so the *next* call paid a full model reload and looked like a 40-second
+    # synthesis. (mlx::core::detail::CompilerCache::~CompilerCache, reached
+    # through _pthread_tsd_cleanup.)
+    #
+    # Nothing is lost by serializing: generation already runs under _lock, one
+    # at a time, because it is one GPU.
+    app.run(host="0.0.0.0", port=port, threaded=False)
