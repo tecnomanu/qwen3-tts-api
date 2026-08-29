@@ -31,12 +31,16 @@ module.exports = {
   // the engine like the speech route does, so a client can call this first and
   // pay the whole cold path — process start plus decompression — up front.
   'POST /v1/warmup': async (ctx, engine, req, res, h) => {
+    const body = await h.readJson(req).catch(() => ({}));
     if (!(await engine.isUp())) {
       if (ctx.config.get('engine.autostart')) await engine.start();
       else return h.sendJson(res, 503, { error: 'engine is down' });
     }
     try {
-      h.sendJson(res, 200, await engine.bridge.warmup());
+      // Forward the body: it carries which speaker to warm, and warming the
+      // wrong one costs the caller a full model load on its next request —
+      // exactly the cost warmup exists to avoid.
+      h.sendJson(res, 200, await engine.bridge.warmup(body));
     } catch (e) {
       h.sendJson(res, 500, { ok: false, error: e.message });
     }
