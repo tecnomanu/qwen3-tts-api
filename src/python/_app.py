@@ -31,7 +31,10 @@ TAG_INSTRUCTS = {
     "excited": "excited, energetic and very happy",
     "angry": "speaking in an angry tone",
     "whisper": "whispering softly",
-    "calm": "calm and relaxed",
+    # "calm and relaxed" measured 5.4 chars/s against a natural 12 — the model
+    # stretches the delivery until it stops finding EOS. "unhurried" asks for
+    # the same thing and stays at 11.3.
+    "calm": "speaking in an unhurried, even tone",
     "shout": "shouting loudly",
     "narrator": "in a warm, professional narrator tone",
     "neutral": "",
@@ -52,21 +55,69 @@ def trim_silence(a, sr, thr=0.012, pad_ms=80):
     return a[max(0, idx[0] - pad): min(len(a), idx[-1] + pad)]
 
 
-def split_sentences(text, target_len=160):
+# Measured ceiling before Qwen3-TTS-12Hz starts running away: at ~50 chars a
+# chunk comes back at a natural ~10 chars/s, at ~140 it drops to ~5.7 — the
+# model stops finding EOS and keeps generating. The old 160 was above the cliff,
+# so a single ordinary reply ("Te escucho perfecto, Manu. ...", 136 chars) came
+# back as 30 seconds of noise. Keep this conservative: chunks are cheap.
+MAX_CHUNK_CHARS = 80
+
+
+def _hard_wrap(sentence, limit):
+    """Break one over-long sentence at clause, then word, boundaries.
+
+    Sentence splitting alone left a hole: a sentence longer than the limit was
+    never split, it just became its own oversized chunk. Anything without
+    punctuation — a dictated paragraph, a list read aloud — went straight past
+    the cliff.
+    """
+    if len(sentence) <= limit:
+        return [sentence]
+    out, cur = [], ""
+    for clause in re.split(r'(?<=[,;:—–])\s+', sentence):
+        units = [clause] if len(clause) <= limit else clause.split(" ")
+        for unit in units:
+            if cur and len(cur) + 1 + len(unit) > limit:
+                out.append(cur)
+                cur = unit
+            else:
+                cur = f"{cur} {unit}".strip()
+    if cur:
+        out.append(cur)
+    return out
+
+
+def split_sentences(text, target_len=MAX_CHUNK_CHARS):
     parts = re.split(r'(?<=[.!?¡¿\n])\s+', text.strip())
     chunks, cur = [], ""
     for p in parts:
         if not p:
             continue
-        if len(cur) + len(p) < target_len:
-            cur += (" " if cur else "") + p
-        else:
-            if cur:
+        for piece in _hard_wrap(p, target_len):
+            if cur and len(cur) + 1 + len(piece) > target_len:
                 chunks.append(cur)
-            cur = p
+                cur = piece
+            else:
+                cur = f"{cur} {piece}".strip()
     if cur:
         chunks.append(cur)
     return chunks or [text]
+
+
+# A chunk that opens with ¡ or ¿ does not stop. Measured, holding everything
+# else fixed: "¡Hola Manu!" runs to whatever token ceiling it is given and comes
+# back at 5.0 chars/s, while "Hola Manu!" ends on its own after 13 tokens at
+# 9.3. Swapping only the closing mark changes nothing — "¡Hola Manu." fails the
+# same way — so it is the opening mark, not the sentence type.
+#
+# These marks are orthography, not sound: Spanish does not pronounce them, they
+# warn a *reader* what intonation is coming. The closing ! or ? stays, which is
+# what the model actually needs to shape the delivery.
+_OPENING_MARK = re.compile(r'^[¡¿]+\s*')
+
+
+def strip_opening_marks(text):
+    return _OPENING_MARK.sub('', text.strip())
 
 
 def has_tags(text):
@@ -87,10 +138,21 @@ def parse_tagged(text):
     return segs
 
 
-def synth_long(backend, text, language, instruct, clone, temperature, voice=None, gap_ms=120):
+def synth_long(backend, text, language, instruct, clone, temperature, voice=None,
+               gap_ms=120, seed=DEFAULT_SEED):
     pieces, sr = [], 24000
     for s in split_sentences(text):
-        audio, sr = backend.synth(s, language, instruct, clone, temperature, voice=voice)
+        # Pin the seed, exactly as the tagged path does. Without it each chunk
+        # of a split reply draws its own voice, so a three-sentence answer could
+        # change speaker between sentences — and it made runs unreproducible,
+        # which is its own kind of expensive when something sounds wrong.
+        audio, sr = backend.synth(strip_opening_marks(s), language, instruct,
+                                  clone, temperature, seed=seed, voice=voice)
+        # Every generation carries its own lead-in and tail. Untrimmed, those
+        # add up once chunks get shorter — the same reply arrives sounding
+        # chopped, with a hole between every few words. synth_tagged already
+        # trimmed for this reason; the plain path needs it just as much.
+        audio = trim_silence(audio, sr)
         pieces.append(audio)
         pieces.append(np.zeros(int(sr * gap_ms / 1000), dtype=np.float32))
     return (np.concatenate(pieces) if pieces else np.zeros(1, dtype=np.float32)), sr
@@ -103,11 +165,17 @@ def synth_tagged(backend, text, base_instruct, language, temperature, seed, voic
     for tag, seg_text in parse_tagged(text):
         emo = TAG_INSTRUCTS.get(tag, "") if tag else ""
         instruct = f"{base}, {emo}" if emo else base
-        audio, sr = backend.synth(seg_text, language=language, instruct=instruct,
-                                  temperature=temperature, seed=seed, voice=voice)
-        audio = trim_silence(audio, sr)
-        pieces.append(audio)
-        pieces.append(np.zeros(int(sr * gap_ms / 1000), dtype=np.float32))
+        # A tag marks where the emotion changes, not where a generation should
+        # end. One [calm] in front of a three-sentence reply used to mean the
+        # whole reply was generated in a single pass — the runaway the plain
+        # path had been splitting to avoid all along.
+        for piece in split_sentences(seg_text):
+            audio, sr = backend.synth(strip_opening_marks(piece), language=language,
+                                      instruct=instruct, temperature=temperature,
+                                      seed=seed, voice=voice)
+            audio = trim_silence(audio, sr)
+            pieces.append(audio)
+            pieces.append(np.zeros(int(sr * gap_ms / 1000), dtype=np.float32))
     return (np.concatenate(pieces) if pieces else np.zeros(1, dtype=np.float32)), sr
 
 
@@ -126,6 +194,35 @@ def create_app(backend):
     @app.route("/v1/voices")
     def voices():
         return jsonify({"voices": backend.speakers()})
+
+    @app.route("/v1/warmup", methods=["GET", "POST"])
+    def warmup():
+        """Make the model ready before anyone is waiting on it.
+
+        On a machine under memory pressure the weights get compressed out
+        between requests, and the next generation pays to decompress them —
+        measured here at 8s against 44s for the same line, with the engine
+        reporting `load 0.0s` both times because nothing was reloading: the
+        pages were simply cold.
+
+        A client that knows a request is coming — a voice UI, the moment the
+        user presses to talk — can call this and spend that cost while the
+        user is still speaking instead of after.
+        """
+        t0 = time.time()
+        try:
+            with _lock:
+                backend.drain_load_events()
+                backend.synth("Hola.", language="Spanish",
+                              instruct="A neutral voice.", max_tokens=64)
+                load_ms = sum(e["ms"] for e in backend.drain_load_events())
+            total_ms = (time.time() - t0) * 1000
+            print(f"[warmup] ready in {total_ms/1000:.1f}s "
+                  f"(load {load_ms/1000:.1f}s, {backend.name})", flush=True)
+            return jsonify({"ok": True, "ms": round(total_ms), "backend": backend.name})
+        except Exception as e:
+            print(f"[warmup] failed: {e}", flush=True)
+            return jsonify({"ok": False, "error": str(e)}), 500
 
     @app.route("/v1/audio/speech", methods=["POST"])
     def speech():
@@ -149,10 +246,12 @@ def create_app(backend):
                     audio, sr = synth_tagged(backend, text, instruct, language, temperature, seed, voice=voice)
                     mode = "tagged"
                 elif split and not max_tokens:
-                    audio, sr = synth_long(backend, text, language, instruct, clone, temperature, voice=voice)
+                    audio, sr = synth_long(backend, text, language, instruct, clone,
+                                           temperature, voice=voice, seed=seed)
                     mode = "split"
                 else:
-                    audio, sr = backend.synth(text, language, instruct, clone, temperature, max_tokens, voice=voice)
+                    audio, sr = backend.synth(strip_opening_marks(text), language, instruct,
+                                              clone, temperature, max_tokens, voice=voice)
                     mode = "single"
                 total_ms = (time.time() - t0) * 1000
                 load_events = backend.drain_load_events()

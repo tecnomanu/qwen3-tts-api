@@ -27,6 +27,21 @@ module.exports = {
     res.end(buffer);
   },
 
+  // Warm the model without generating anything a caller has to keep. Autostarts
+  // the engine like the speech route does, so a client can call this first and
+  // pay the whole cold path — process start plus decompression — up front.
+  'POST /v1/warmup': async (ctx, engine, req, res, h) => {
+    if (!(await engine.isUp())) {
+      if (ctx.config.get('engine.autostart')) await engine.start();
+      else return h.sendJson(res, 503, { error: 'engine is down' });
+    }
+    try {
+      h.sendJson(res, 200, await engine.bridge.warmup());
+    } catch (e) {
+      h.sendJson(res, 500, { ok: false, error: e.message });
+    }
+  },
+
   'GET /v1/models': async (ctx, engine, req, res, h) => {
     if (!(await engine.isUp())) return h.sendJson(res, 503, { error: 'engine is down' });
     h.sendJson(res, 200, await engine.bridge.listModels());
