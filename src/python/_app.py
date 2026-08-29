@@ -209,12 +209,18 @@ def create_app(backend):
         user presses to talk — can call this and spend that cost while the
         user is still speaking instead of after.
         """
+        # Warm the model the caller is actually going to use. A named speaker
+        # lives in CustomVoice and a bare instruct in VoiceDesign — they are
+        # different multi-gigabyte files, so warming one leaves the other
+        # exactly as cold as before.
+        voice = (request.get_json(silent=True) or {}).get("voice") or None
         t0 = time.time()
         try:
             with _lock:
                 backend.drain_load_events()
                 backend.synth("Hola.", language="Spanish",
-                              instruct="A neutral voice.", max_tokens=64)
+                              instruct="A neutral voice.", max_tokens=64,
+                              voice=voice)
                 load_ms = sum(e["ms"] for e in backend.drain_load_events())
             total_ms = (time.time() - t0) * 1000
             print(f"[warmup] ready in {total_ms/1000:.1f}s "
