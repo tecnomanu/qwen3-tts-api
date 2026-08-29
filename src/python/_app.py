@@ -104,6 +104,22 @@ def split_sentences(text, target_len=MAX_CHUNK_CHARS):
     return chunks or [text]
 
 
+# A chunk that opens with ¡ or ¿ does not stop. Measured, holding everything
+# else fixed: "¡Hola Manu!" runs to whatever token ceiling it is given and comes
+# back at 5.0 chars/s, while "Hola Manu!" ends on its own after 13 tokens at
+# 9.3. Swapping only the closing mark changes nothing — "¡Hola Manu." fails the
+# same way — so it is the opening mark, not the sentence type.
+#
+# These marks are orthography, not sound: Spanish does not pronounce them, they
+# warn a *reader* what intonation is coming. The closing ! or ? stays, which is
+# what the model actually needs to shape the delivery.
+_OPENING_MARK = re.compile(r'^[¡¿]+\s*')
+
+
+def strip_opening_marks(text):
+    return _OPENING_MARK.sub('', text.strip())
+
+
 def has_tags(text):
     return bool(re.search(r'\[[a-zA-Z]{2,12}\]', text))
 
@@ -130,8 +146,8 @@ def synth_long(backend, text, language, instruct, clone, temperature, voice=None
         # of a split reply draws its own voice, so a three-sentence answer could
         # change speaker between sentences — and it made runs unreproducible,
         # which is its own kind of expensive when something sounds wrong.
-        audio, sr = backend.synth(s, language, instruct, clone, temperature,
-                                  seed=seed, voice=voice)
+        audio, sr = backend.synth(strip_opening_marks(s), language, instruct,
+                                  clone, temperature, seed=seed, voice=voice)
         # Every generation carries its own lead-in and tail. Untrimmed, those
         # add up once chunks get shorter — the same reply arrives sounding
         # chopped, with a hole between every few words. synth_tagged already
@@ -154,8 +170,9 @@ def synth_tagged(backend, text, base_instruct, language, temperature, seed, voic
         # whole reply was generated in a single pass — the runaway the plain
         # path had been splitting to avoid all along.
         for piece in split_sentences(seg_text):
-            audio, sr = backend.synth(piece, language=language, instruct=instruct,
-                                      temperature=temperature, seed=seed, voice=voice)
+            audio, sr = backend.synth(strip_opening_marks(piece), language=language,
+                                      instruct=instruct, temperature=temperature,
+                                      seed=seed, voice=voice)
             audio = trim_silence(audio, sr)
             pieces.append(audio)
             pieces.append(np.zeros(int(sr * gap_ms / 1000), dtype=np.float32))
@@ -233,7 +250,8 @@ def create_app(backend):
                                            temperature, voice=voice, seed=seed)
                     mode = "split"
                 else:
-                    audio, sr = backend.synth(text, language, instruct, clone, temperature, max_tokens, voice=voice)
+                    audio, sr = backend.synth(strip_opening_marks(text), language, instruct,
+                                              clone, temperature, max_tokens, voice=voice)
                     mode = "single"
                 total_ms = (time.time() - t0) * 1000
                 load_events = backend.drain_load_events()

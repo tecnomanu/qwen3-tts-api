@@ -23,8 +23,16 @@ def cap_tokens(text):
     plus a small constant clears the worst legitimate case with room to spare —
     verified against known-good lines at 28 and 63 chars, which came back
     identical with the ceiling applied.
+
+    The floor matters as much as the slope, because for short text the floor IS
+    the ceiling. Short exclamations are the reliable trigger: "¡Hola Manu!"
+    never emits EOS and runs to whatever it is given — 32 tokens produced 2.7s
+    of humming for eleven characters, while "Hola Manu." stopped on its own at
+    12. The floor only has to cover text too short for the slope to reach a
+    sayable length, so 20 tokens (1.7s, about 20 characters of speech) is
+    enough, and it caps that same greeting at 1.7s instead of 2.7s.
     """
-    return min(2048, max(32, int(len(text) * 1.35) + 12))
+    return min(2048, max(20, int(len(text) * 1.35) + 12))
 
 
 class MlxBackend(TTSBackend):
