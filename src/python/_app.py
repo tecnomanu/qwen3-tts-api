@@ -139,7 +139,7 @@ def parse_tagged(text):
 
 
 def synth_long(backend, text, language, instruct, clone, temperature, voice=None,
-               gap_ms=120, seed=DEFAULT_SEED):
+               gap_ms=120, seed=DEFAULT_SEED, ref_text=None):
     pieces, sr = [], 24000
     for s in split_sentences(text):
         # Pin the seed, exactly as the tagged path does. Without it each chunk
@@ -147,7 +147,8 @@ def synth_long(backend, text, language, instruct, clone, temperature, voice=None
         # change speaker between sentences — and it made runs unreproducible,
         # which is its own kind of expensive when something sounds wrong.
         audio, sr = backend.synth(strip_opening_marks(s), language, instruct,
-                                  clone, temperature, seed=seed, voice=voice)
+                                  clone, temperature, seed=seed, voice=voice,
+                                  ref_text=ref_text)
         # Every generation carries its own lead-in and tail. Untrimmed, those
         # add up once chunks get shorter — the same reply arrives sounding
         # chopped, with a hole between every few words. synth_tagged already
@@ -239,6 +240,7 @@ def create_app(backend):
         language = data.get("language", "Spanish")
         instruct = data.get("instruct")
         clone = data.get("clone")
+        ref_text = data.get("ref_text")   # what the reference recording says
         temperature = float(data.get("temperature", 0.7))
         split = data.get("split", True)
         max_tokens = data.get("max_tokens")
@@ -253,11 +255,13 @@ def create_app(backend):
                     mode = "tagged"
                 elif split and not max_tokens:
                     audio, sr = synth_long(backend, text, language, instruct, clone,
-                                           temperature, voice=voice, seed=seed)
+                                           temperature, voice=voice, seed=seed,
+                                           ref_text=ref_text)
                     mode = "split"
                 else:
                     audio, sr = backend.synth(strip_opening_marks(text), language, instruct,
-                                              clone, temperature, max_tokens, voice=voice)
+                                              clone, temperature, max_tokens, voice=voice,
+                                              ref_text=ref_text)
                     mode = "single"
                 total_ms = (time.time() - t0) * 1000
                 load_events = backend.drain_load_events()

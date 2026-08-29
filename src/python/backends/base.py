@@ -50,6 +50,7 @@ class TTSBackend:
         raise NotImplementedError
 
     def synth(self, text, language="Spanish", instruct=None, clone=None,
-              temperature=0.7, max_tokens=None, seed=None, voice=None):
+              temperature=0.7, max_tokens=None, seed=None, voice=None,
+              ref_text=None):
         """Return (audio_float32_mono: np.ndarray, sample_rate: int)."""
         raise NotImplementedError

@@ -2,7 +2,7 @@
 # requires-python = ">=3.12"
 # dependencies = [
 #     "transformers>=5.0.0rc1",
-#     "mlx-audio==0.3.0rc1",
+#     "mlx-audio==0.5.0",
 #     "flask",
 #     "numpy",
 #     "soundfile",
