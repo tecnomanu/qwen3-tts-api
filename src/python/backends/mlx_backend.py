@@ -11,7 +11,20 @@ from backends.base import TTSBackend
 
 
 def cap_tokens(text):
-    return min(2048, max(160, int(len(text) * 1.8) + 48))
+    """Token ceiling for one chunk. The model is 12 Hz, so tokens/12 = seconds.
+
+    This is the only hard stop on a runaway. When the model fails to emit EOS
+    it generates until it hits this number, so the ceiling *is* the damage: a
+    28-char line that should take 24 tokens was allowed 160 and came back as
+    13 seconds of noise. Every runaway measured landed on exactly ~156 tokens,
+    which is the old floor, not a coincidence.
+
+    Observed cost of real speech is 0.85-1.3 tokens per character, so 1.35x
+    plus a small constant clears the worst legitimate case with room to spare —
+    verified against known-good lines at 28 and 63 chars, which came back
+    identical with the ceiling applied.
+    """
+    return min(2048, max(32, int(len(text) * 1.35) + 12))
 
 
 class MlxBackend(TTSBackend):
@@ -51,6 +64,8 @@ class MlxBackend(TTSBackend):
         else:
             model = self._model("voicedesign")
             results = list(model.generate_voice_design(
-                text=text, language=language, instruct=instruct or "A natural, clear voice.",
+                text=text, language=language, # Measured at 2.2 chars/s — the fallback voice was the slowest thing
+                # in the system. "A neutral male voice, clear and even" holds 9.3.
+                instruct=instruct or "A neutral male voice, clear and even",
                 temperature=temperature, max_tokens=mt, verbose=False))
         return np.array(results[0].audio, dtype=np.float32), model.sample_rate

@@ -31,7 +31,10 @@ TAG_INSTRUCTS = {
     "excited": "excited, energetic and very happy",
     "angry": "speaking in an angry tone",
     "whisper": "whispering softly",
-    "calm": "calm and relaxed",
+    # "calm and relaxed" measured 5.4 chars/s against a natural 12 — the model
+    # stretches the delivery until it stops finding EOS. "unhurried" asks for
+    # the same thing and stays at 11.3.
+    "calm": "speaking in an unhurried, even tone",
     "shout": "shouting loudly",
     "narrator": "in a warm, professional narrator tone",
     "neutral": "",
@@ -119,10 +122,16 @@ def parse_tagged(text):
     return segs
 
 
-def synth_long(backend, text, language, instruct, clone, temperature, voice=None, gap_ms=120):
+def synth_long(backend, text, language, instruct, clone, temperature, voice=None,
+               gap_ms=120, seed=DEFAULT_SEED):
     pieces, sr = [], 24000
     for s in split_sentences(text):
-        audio, sr = backend.synth(s, language, instruct, clone, temperature, voice=voice)
+        # Pin the seed, exactly as the tagged path does. Without it each chunk
+        # of a split reply draws its own voice, so a three-sentence answer could
+        # change speaker between sentences — and it made runs unreproducible,
+        # which is its own kind of expensive when something sounds wrong.
+        audio, sr = backend.synth(s, language, instruct, clone, temperature,
+                                  seed=seed, voice=voice)
         # Every generation carries its own lead-in and tail. Untrimmed, those
         # add up once chunks get shorter — the same reply arrives sounding
         # chopped, with a hole between every few words. synth_tagged already
@@ -220,7 +229,8 @@ def create_app(backend):
                     audio, sr = synth_tagged(backend, text, instruct, language, temperature, seed, voice=voice)
                     mode = "tagged"
                 elif split and not max_tokens:
-                    audio, sr = synth_long(backend, text, language, instruct, clone, temperature, voice=voice)
+                    audio, sr = synth_long(backend, text, language, instruct, clone,
+                                           temperature, voice=voice, seed=seed)
                     mode = "split"
                 else:
                     audio, sr = backend.synth(text, language, instruct, clone, temperature, max_tokens, voice=voice)
