@@ -214,14 +214,24 @@ def create_app(backend):
         # lives in CustomVoice and a bare instruct in VoiceDesign — they are
         # different multi-gigabyte files, so warming one leaves the other
         # exactly as cold as before.
-        voice = (request.get_json(silent=True) or {}).get("voice") or None
+        req = request.get_json(silent=True) or {}
+        voice = req.get("voice") or None
+        # A clone is served by a third checkpoint again, so a warmup that only
+        # ever looks at `voice` warms nothing a cloned request will use — and
+        # the caller then pays the full model load on its first real sentence
+        # (measured at 22 s against 0.4 s warm). Callers already send it;
+        # reading it is what was missing.
+        clone = req.get("clone") or None
+        ref_text = req.get("ref_text") or None
+        language = req.get("language") or "Spanish"
         t0 = time.time()
         try:
             with _lock:
                 backend.drain_load_events()
-                backend.synth("Hola.", language="Spanish",
-                              instruct="A neutral voice.", max_tokens=64,
-                              voice=voice)
+                backend.synth("Hola.", language=language,
+                              instruct=None if clone else "A neutral voice.",
+                              clone=clone, ref_text=ref_text,
+                              max_tokens=64, voice=voice)
                 load_ms = sum(e["ms"] for e in backend.drain_load_events())
             total_ms = (time.time() - t0) * 1000
             print(f"[warmup] ready in {total_ms/1000:.1f}s "

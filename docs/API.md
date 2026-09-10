@@ -72,6 +72,18 @@ MLX backend only; the torch backend answers `501`. The engine lock is held for t
 generation, exactly as it is for the non-streaming route — one generation at a time is the
 engine's rule, not this route's choice.
 
+## `POST /v1/warmup`
+
+Loads the checkpoint a coming request will use, so the caller pays the model
+load while nobody is waiting. Body: `voice`, `clone` + `ref_text`, `language` —
+the same fields that decide who speaks in `/v1/audio/speech`.
+
+**Send the same ones you are about to synthesize with.** A named speaker, a
+cloned reference and a bare instruct live in three different multi-gigabyte
+checkpoints, and warming one leaves the others exactly as cold as they were.
+Warming with `clone` and then asking for a clone measured **0.5 s** on the first
+sentence; warming without it, **22 s**.
+
 ## Other routes
 | Method | Route | Description |
 |---|---|---|
