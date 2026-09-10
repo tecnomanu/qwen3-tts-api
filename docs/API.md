@@ -27,11 +27,57 @@ curl -X POST http://127.0.0.1:5111/v1/audio/speech \
   -d '{"input":"Hello world","instruct":"A warm voice"}' -o out.wav
 ```
 
+## `POST /v1/audio/speech/stream`
+
+The same body as `/v1/audio/speech`, plus `interval` (seconds of audio per chunk, default
+`0.5`). The response is **raw 16-bit little-endian mono PCM with no header**, sent with
+chunked transfer encoding:
+
+| header | meaning |
+|---|---|
+| `X-QVox-Sample-Rate` | samples per second (24000) |
+| `X-QVox-Format` | `pcm_s16le_mono` |
+
+There is no header in the body because the length is not known when the first chunk is
+sent — that is the whole point of the route. A caller that wants a file keeps using
+`/v1/audio/speech`, which is unchanged.
+
+```bash
+curl -N -X POST http://127.0.0.1:5111/v1/audio/speech/stream \
+  -H "content-type: application/json" -H "x-api-key: YOUR_KEY" \
+  -d '{"input":"Hola, ¿cómo va?","voice":"aiden"}' \
+  --output - | ffplay -f s16le -ar 24000 -ac 1 -i - -nodisp -autoexit
+```
+
+**Why it exists.** `mlx-audio`'s Qwen3-TTS generators already accept `stream=True`; the
+non-streaming path collects them with `list()` and returns one waveform, so the caller pays
+the entire generation before hearing anything. Measured on one machine, 77-character line,
+`Qwen3-TTS-12Hz-1.7B-CustomVoice`:
+
+| | first audio | total |
+|---|---|---|
+| `/v1/audio/speech` | 3529 ms | 3529 ms |
+| `/v1/audio/speech/stream` | **349 ms** | 2530 ms |
+
+Generation runs at ~0.47x realtime — about 480 ms of audio every 225 ms — so a player that
+starts on the first chunk never runs dry. Quality is not traded away: the chunks joined and
+fed back through whisper transcribe word for word, because the codec decoder keeps 25
+frames of left context across chunk boundaries.
+
+Long text is **not** sentence-split here the way `split: true` splits it for
+`/v1/audio/speech`. The model is already emitting progressively, so cutting the text on top
+of that would only add seams the decoder is busy avoiding.
+
+MLX backend only; the torch backend answers `501`. The engine lock is held for the whole
+generation, exactly as it is for the non-streaming route — one generation at a time is the
+engine's rule, not this route's choice.
+
 ## Other routes
 | Method | Route | Description |
 |---|---|---|
 | GET | `/health` | daemon ping + engine state |
 | GET | `/v1/models` | models loaded in memory |
+| POST | `/v1/audio/speech/stream` | raw PCM as it is generated (see above) |
 | GET | `/api/status` | full state (for the panel) |
 | GET | `/api/config` | current config (keys masked) |
 | POST | `/api/config` | config patch `{ "tts.temperature": 0.6 }` |

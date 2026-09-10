@@ -20,6 +20,10 @@
   `server/*` transport; each `cli/commands/*` one action.
 - **OCP/DIP**: `_app.py` depends on the `TTSBackend` *interface* (`backends/base.py`), not on MLX
   or Torch. Adding a new backend = one class, without touching the app.
+- **Streaming is optional, per backend**: `synth_stream()` is not on the base interface as a
+  requirement — `_app.py` checks `hasattr(backend, "synth_stream")` and answers `501` when a
+  backend cannot do it. MLX can (mlx-audio's generators take `stream=True`); torch does not,
+  and does not have to.
 - **Composition root**: `core/context.js` builds and injects `ctx` (brand, paths, config, logger).
 
 ## Decisions
@@ -33,6 +37,7 @@ The daemon exposes simple HTTP with an API key, so it can be registered as an AP
 runtime/tool later without changes to the core.
 
 ## Deploy
-- **Mac**: native (no Docker — Docker on Mac can't access MPS/Metal). mlx backend.
+- **Mac**: native (no Docker — Docker on Mac can't access MPS/Metal). mlx backend, the only
+  one that streams today.
 - **NVIDIA VPS**: Docker with CUDA. torch backend. Fast.
 - **Radeon VPS (RDNA1/5700XT)**: bare-metal with ROCm (unofficial, no flash-attn). torch backend.

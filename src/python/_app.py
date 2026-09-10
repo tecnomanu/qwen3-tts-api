@@ -231,6 +231,78 @@ def create_app(backend):
             print(f"[warmup] failed: {e}", flush=True)
             return jsonify({"ok": False, "error": str(e)}), 500
 
+    @app.route("/v1/audio/speech/stream", methods=["POST"])
+    def speech_stream():
+        """Raw PCM as it is generated, instead of a WAV once it is finished.
+
+        Same body as /v1/audio/speech. The response is 16-bit little-endian
+        mono PCM with no header — the sample rate travels in X-QVox-Sample-Rate
+        — sent with chunked transfer so the caller can play the first chunk
+        while the rest is still being made.
+
+        Why it exists: /v1/audio/speech cannot answer before the last sample is
+        computed, which on this machine is 3449 ms for a 77-character line. The
+        first chunk here lands at 381 ms, and the chunks joined transcribe back
+        word for word, so the wait was never the audio — it was waiting for all
+        of it. Callers that want one file keep using /v1/audio/speech; nothing
+        about that endpoint changed.
+
+        Long text is not split here the way synth_long splits it: the model is
+        already emitting progressively, so chunking the text on top would only
+        add seams the decoder is avoiding on its own.
+        """
+        data = request.get_json(force=True)
+        text = (data.get("input") or data.get("text") or "").strip()
+        if not text:
+            return jsonify({"error": "missing 'input'"}), 400
+        if not hasattr(backend, "synth_stream"):
+            return jsonify({"error": f"{backend.name} backend cannot stream"}), 501
+
+        kw = dict(
+            language=data.get("language", "Spanish"),
+            instruct=data.get("instruct"),
+            clone=data.get("clone"),
+            ref_text=data.get("ref_text"),
+            temperature=float(data.get("temperature", 0.7)),
+            max_tokens=data.get("max_tokens"),
+            seed=int(data.get("seed", DEFAULT_SEED)),
+            voice=data.get("voice") or None,
+            interval=float(data.get("interval", 0.5)),
+        )
+
+        def pcm_chunks():
+            # The lock is held for the whole generation, as it is for the
+            # non-streaming path: one generation at a time is the engine's rule,
+            # not this endpoint's choice.
+            with _lock:
+                backend.drain_load_events()
+                t0 = time.time()
+                first_ms = None
+                n = 0
+                secs = 0.0
+                sr = None
+                try:
+                    for audio, sr in backend.synth_stream(strip_opening_marks(text), **kw):
+                        if first_ms is None:
+                            first_ms = (time.time() - t0) * 1000
+                        n += 1
+                        secs += len(audio) / sr
+                        yield (np.clip(audio, -1.0, 1.0) * 32767).astype("<i2").tobytes()
+                finally:
+                    total = (time.time() - t0) * 1000
+                    print(f"[speech/stream] {len(text)}chars -> {secs:.1f}s in {total/1000:.1f}s "
+                          f"(first chunk {(first_ms or 0):.0f}ms, {n} chunks, {backend.name})",
+                          flush=True)
+
+        # Sample rate has to be known before the first chunk is generated, and
+        # it is a property of the model, not of the request.
+        sample_rate = getattr(backend, "sample_rate", None) or 24000
+        resp = Response(pcm_chunks(), mimetype="audio/L16")
+        resp.headers["X-QVox-Sample-Rate"] = str(sample_rate)
+        resp.headers["X-QVox-Format"] = "pcm_s16le_mono"
+        resp.headers["Cache-Control"] = "no-store"
+        return resp
+
     @app.route("/v1/audio/speech", methods=["POST"])
     def speech():
         data = request.get_json(force=True)

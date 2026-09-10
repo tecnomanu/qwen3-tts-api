@@ -27,6 +27,44 @@ module.exports = {
     res.end(buffer);
   },
 
+  // Same body as /v1/audio/speech, but the audio comes back as it is made:
+  // 16-bit little-endian mono PCM, no header, chunked. The sample rate rides in
+  // X-QVox-Sample-Rate because a raw stream has nowhere else to put it.
+  //
+  // The wait for speech was never the audio, it was waiting for all of it: the
+  // same line answers in ~3.5 s through /v1/audio/speech and puts its first
+  // chunk on the wire at ~350 ms here. Nothing is buffered on the way through —
+  // buffering would give back the very latency the route exists to remove.
+  'POST /v1/audio/speech/stream': async (ctx, engine, req, res, h) => {
+    const body = await h.readJson(req);
+    if (!body.input && !body.text) return h.sendJson(res, 400, { error: "missing 'input'" });
+    if (!(await engine.isUp())) {
+      if (ctx.config.get('engine.autostart')) await engine.start();
+      else return h.sendJson(res, 503, { error: 'engine is down' });
+    }
+    try {
+      const upstream = await engine.bridge.speakStream(body);
+      if (upstream.statusCode !== 200) {
+        const chunks = [];
+        for await (const c of upstream) chunks.push(c);
+        res.writeHead(upstream.statusCode, { 'content-type': 'application/json' });
+        return res.end(Buffer.concat(chunks));
+      }
+      const out = { 'content-type': upstream.headers['content-type'] || 'audio/L16' };
+      for (const [k, v] of Object.entries(upstream.headers)) {
+        if (k.toLowerCase().startsWith('x-qvox-')) out[k] = v;
+      }
+      res.writeHead(200, out);
+      upstream.pipe(res);
+      // A client that hangs up mid-sentence should not leave the engine writing
+      // into a dead socket.
+      res.on('close', () => upstream.destroy());
+    } catch (e) {
+      if (!res.headersSent) h.sendJson(res, 500, { error: e.message });
+      else res.end();
+    }
+  },
+
   // Warm the model without generating anything a caller has to keep. Autostarts
   // the engine like the speech route does, so a client can call this first and
   // pay the whole cold path — process start plus decompression — up front.

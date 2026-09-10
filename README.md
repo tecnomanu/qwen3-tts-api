@@ -52,6 +52,25 @@ curl -X POST http://127.0.0.1:5111/v1/audio/speech \
   -o out.wav
 ```
 
+### Streaming
+
+`/v1/audio/speech` cannot answer until the last sample exists. `/v1/audio/speech/stream`
+sends the audio as it is generated — raw 16-bit little-endian mono PCM, chunked, with the
+sample rate in `X-QVox-Sample-Rate`:
+
+```bash
+curl -N -X POST http://127.0.0.1:5111/v1/audio/speech/stream \
+  -H "content-type: application/json" \
+  -H "x-api-key: YOUR_KEY" \
+  -d '{"input":"Hola, ¿cómo va?","language":"Spanish","voice":"aiden"}' \
+  --output - | ffplay -f s16le -ar 24000 -ac 1 -i - -nodisp -autoexit
+```
+
+Same 77-character line, same model, same machine: **3.5 s** to a complete WAV, **~0.4 s**
+to the first streamed chunk. The waiting was never the audio, it was waiting for all of
+it. Quality is unchanged — the chunks joined transcribe back word for word, because the
+decoder carries 25 frames of left context across the seams. MLX backend only.
+
 See [docs/API.md](docs/API.md), [docs/CLI.md](docs/CLI.md), [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
 
 ## Agent skill (integrate it elsewhere)

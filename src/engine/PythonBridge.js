@@ -54,6 +54,31 @@ class PythonBridge {
   }
 
   /** Generate audio. Returns { buffer (wav), contentType }. */
+  /**
+   * Open the streaming endpoint and hand back the live response.
+   *
+   * Unlike speak(), nothing is buffered here: the point of the route is that
+   * the first chunk reaches the caller while the rest is still being made, and
+   * collecting it first would throw exactly that away. The caller pipes it.
+   */
+  speakStream(opts) {
+    return new Promise((resolve, reject) => {
+      const payload = Buffer.from(JSON.stringify(opts || {}));
+      const req = http.request(
+        {
+          host: '127.0.0.1',
+          port: this.port,
+          path: '/v1/audio/speech/stream',
+          method: 'POST',
+          headers: { 'content-type': 'application/json', 'content-length': payload.length },
+        },
+        (res) => resolve(res)
+      );
+      req.on('error', reject);
+      req.end(payload);
+    });
+  }
+
   speak(opts) {
     return this._request('POST', '/v1/audio/speech', opts, { raw: true });
   }
