@@ -3,6 +3,7 @@
 Cloning works here as of mlx-audio 0.5.0 — the speaker encoder transposes to
 channels-first itself now, which is what 0.3.0rc1 got wrong.
 """
+import gc
 import time
 import numpy as np
 import mlx.core as mx
@@ -45,11 +46,45 @@ class MlxBackend(TTSBackend):
     def _model(self, role):
         src = self.resolve(role)
         if src not in self._cache:
+            # ONE checkpoint resident at a time. There are three roles and each
+            # is 4.2 GB, so a cache that only ever grows is how this process was
+            # found holding 8.9 GB with a 16 GB peak on a 24 GB machine — while
+            # `ps` reported 60 MB, because MLX keeps the weights in unified
+            # memory through Metal and RSS never sees them. Read it with
+            # `footprint -p <pid>`, not with ps or top.
+            #
+            # The startup warmup already loads the checkpoint that is going to
+            # answer (see QVOX_WARMUP_VOICE in EngineManager). This is the same
+            # idea for the other way two of them end up resident: switching
+            # role at runtime — a preset voice, then a clone.
+            #
+            # The cost is a reload when you alternate roles. That is ~6s against
+            # several GB that were never going to be read again, and alternating
+            # is the rare case: a run of lines goes through one role.
+            self._evict()
             print(f"[mlx] loading {src} ...", flush=True)
             t = time.time()
             self._cache[src] = load_model(src)
             self._track_load(src, (time.time() - t) * 1000)
         return self._cache[src]
+
+    def _evict(self):
+        """Drop every resident checkpoint and hand the memory back.
+
+        Only ever called from the thread that serves the request. MLX keeps a
+        thread-local compiler cache whose destructor segfaults when the owning
+        thread exits — the same reason the server runs single-threaded — so a
+        background thread must never free MLX objects. mx.clear_cache() is what
+        actually returns the buffers: dropping the last reference alone leaves
+        them in MLX's own allocator pool.
+        """
+        if not self._cache:
+            return
+        for src in list(self._cache):
+            print(f"[mlx] evicting {src}", flush=True)
+            self._cache.pop(src)
+        gc.collect()
+        mx.clear_cache()
 
     def loaded(self):
         return list(self._cache.keys())

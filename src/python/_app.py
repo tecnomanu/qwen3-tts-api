@@ -11,6 +11,7 @@ Two text modes:
 import io
 import os
 import re
+import sys
 import time
 import threading
 import numpy as np
@@ -19,6 +20,40 @@ from flask import Flask, request, jsonify, Response
 
 _lock = threading.Lock()  # one generation at a time (GPU)
 DEFAULT_SEED = 1234
+
+# ── Idle exit ───────────────────────────────────────────────────────────────
+#
+# A loaded checkpoint costs 4.2 GB of unified memory and the engine used to
+# hold it for as long as the daemon was up — days — for a TTS that gets used in
+# bursts. The daemon restarts the engine on demand (autostart, see
+# routes/api.js), so exiting when nobody has asked for audio is free except for
+# the reload the next request pays.
+_last_used = time.monotonic()
+
+
+def _touch():
+    global _last_used
+    _last_used = time.monotonic()
+
+
+def _idle_watchdog(idle_seconds):
+    """Exit the process once nothing has asked for audio in idle_seconds.
+
+    os._exit and not a graceful shutdown ON PURPOSE: MLX keeps a thread-local
+    compiler cache whose destructor segfaults when the owning thread exits (the
+    same reason app.run is single-threaded), and unwinding this process would
+    run exactly those destructors from the wrong thread. _exit skips them, and
+    there is nothing to flush — the audio is already sent.
+    """
+    while True:
+        time.sleep(30)
+        idle = time.monotonic() - _last_used
+        if idle > idle_seconds:
+            print(f"[idle] {int(idle)}s > {idle_seconds}s — exiting, the daemon "
+                  f"will start a fresh engine on the next request", flush=True)
+            sys.stderr.flush()
+            sys.stdout.flush()
+            os._exit(0)
 
 # inline emotion tags -> english instruct fragment (appended to the base voice)
 TAG_INSTRUCTS = {
@@ -182,6 +217,22 @@ def synth_tagged(backend, text, base_instruct, language, temperature, seed, voic
 
 def create_app(backend):
     app = Flask(__name__)
+
+    @app.before_request
+    def _mark_use():
+        """A poll is not a use.
+
+        /health, /v1/models and /v1/voices are what the panel and the
+        supervisor ask on a timer; counting those would reset the idle clock
+        forever and pin the weights with it. That is exactly how apx's whisper
+        server ended up unable to ever reach its own idle timeout.
+
+        /v1/warmup DOES count: it is someone explicitly asking to stay ready.
+        So an external keep-warm pinger holds this engine up by design — turn
+        the pinger off if you want the idle exit to actually fire.
+        """
+        if request.path.startswith("/v1/audio/") or request.path == "/v1/warmup":
+            _touch()
 
     @app.route("/health")
     def health():
@@ -386,6 +437,11 @@ def run(backend):
             print("--- warmup ok ---", flush=True)
         except Exception as e:
             print(f"--- warmup skip: {e} ---", flush=True)
+    idle_minutes = int(os.environ.get("QVOX_IDLE_MINUTES", "0") or 0)
+    if idle_minutes > 0:
+        threading.Thread(target=_idle_watchdog, args=(idle_minutes * 60,),
+                         daemon=True).start()
+        print(f"engine[{backend.name}] idle exit after {idle_minutes} min", flush=True)
     print(f"engine[{backend.name}] on :{port}", flush=True)
     # Single-threaded on purpose. MLX keeps a thread-local compiler cache whose
     # destructor segfaults when the owning thread exits — and with a thread per

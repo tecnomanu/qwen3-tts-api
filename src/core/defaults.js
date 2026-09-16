@@ -13,6 +13,14 @@ module.exports = {
     pythonCmd: 'uv', // 'uv' (recommended) or 'python3'
     warmup: true,
     autostart: true, // the server boots the worker automatically
+    // Minutes without a single audio request before the worker exits and gives
+    // its checkpoint back — 4.2 GB of unified memory that a burst of TTS holds
+    // for days otherwise. The next request starts a fresh worker (autostart),
+    // paying one reload. 0 disables it.
+    //
+    // A warm-up ping counts as a request, so an external keep-warm loop (apx
+    // has one, every 3 min by default) pins the worker up regardless of this.
+    idleMinutes: 15,
   },
 
   // --- models ---

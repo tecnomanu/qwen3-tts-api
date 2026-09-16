@@ -48,6 +48,7 @@ class EngineManager {
       // uses. Two checkpoints resident, one of them never touched.
       QVOX_WARMUP_VOICE: c.tts?.defaultVoice || '',
       QVOX_WARMUP: c.engine.warmup ? '1' : '0',
+      QVOX_IDLE_MINUTES: String(c.engine.idleMinutes ?? 0),
       HF_HUB_ENABLE_HF_TRANSFER: c.hf.enableHfTransfer ? '1' : '0',
       ...(c.hf.token ? { HF_TOKEN: c.hf.token } : {}),
     };
