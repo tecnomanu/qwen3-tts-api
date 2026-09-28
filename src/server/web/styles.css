@@ -133,6 +133,8 @@ code { background: var(--panel2); padding: 1px 6px; border-radius: 5px; }
   display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap; }
 .foot-left { color: var(--muted); font-size: 13px; }
 .foot-left b { color: var(--accent); }
+.foot-repo { color: var(--muted); text-decoration: none; }
+.foot-repo:hover { color: var(--text); }
 .foot-right { display: inline-flex; align-items: center; gap: 12px; }
 .foot-by { color: var(--muted); font-size: 13px; }
 .foot-by b { color: var(--text); }
