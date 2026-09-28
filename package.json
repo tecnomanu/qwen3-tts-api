@@ -29,6 +29,7 @@
   "files": [
     "bin/",
     "src/",
+    "!src/**/__pycache__/",
     "docs/",
     "README.md",
     "LICENSE"
