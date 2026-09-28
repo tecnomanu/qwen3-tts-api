@@ -1,16 +1,6 @@
 'use strict';
 /** Initial wizard: creates config + folders and checks system dependencies. */
 const fs = require('fs');
-const { execSync } = require('child_process');
-
-function has(cmd) {
-  try {
-    execSync(`command -v ${cmd}`, { stdio: 'ignore' });
-    return true;
-  } catch {
-    return false;
-  }
-}
 
 module.exports = async function setup(ctx) {
   const { logger, paths, config, brand } = ctx;
@@ -23,21 +13,24 @@ module.exports = async function setup(ctx) {
     logger.info('config.json already exists (left untouched)');
   }
 
-  // system dependencies
-  const checks = [
-    ['uv', 'python manager (recommended) — https://docs.astral.sh/uv/'],
-    ['python3', 'fallback if you do not use uv'],
-    ['ffmpeg', 'audio conversion (mp3/ogg)'],
-  ];
-  logger.info('System dependencies:');
-  for (const [bin, why] of checks) {
+  // Requirements first: whether this machine is worth the model download.
+  const { checkRequirements } = require('../../core/requirements');
+  const req = checkRequirements(paths);
+  logger.info('Requirements:');
+  for (const c of req.checks) {
+    const mark = c.level === 'ok' ? '[ok]' : c.level === 'warn' ? '[!!]' : '[--]';
     // eslint-disable-next-line no-console
-    console.log(`  ${has(bin) ? '[ok]' : '[--]'} ${bin.padEnd(8)} ${why}`);
+    console.log(`  ${mark} ${c.name.padEnd(12)} ${c.detail}`);
+  }
+  if (req.verdict === 'unsupported') {
+    logger.error('This machine does not meet the requirements above ([--]). Fix those before downloading models.');
+    process.exitCode = 1;
+    return;
+  }
+  if (req.verdict === 'slow') {
+    logger.warn('It will run, but slowly. Fine for trying it out; not for long narrations.');
   }
 
-  // likely backend
-  const isMac = process.platform === 'darwin' && process.arch === 'arm64';
-  logger.info(`Suggested backend: ${isMac ? 'mlx (Apple Silicon, fast)' : 'torch (CUDA/ROCm/CPU)'}`);
-
+  logger.info(`Suggested backend: ${req.accelerator === 'apple-silicon' ? 'mlx (Apple Silicon, fast)' : 'torch (CUDA/ROCm/CPU)'}`);
   logger.ok(`Done. Try:  ${brand.cli} serve`);
 };

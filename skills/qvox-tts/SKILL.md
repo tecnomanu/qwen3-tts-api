@@ -29,10 +29,12 @@ the caller choose a "mode":
 | `instruct` (a voice description), no `clone`/`voice` | **VoiceDesign** | voice built from the description (default) |
 | text with inline `[tags]`, no `clone` | **VoiceDesign** | same voice, emotion changes per segment |
 | `voice` (a preset speaker name) | **CustomVoice** | a named built-in voice |
-| `clone` (path to a reference wav) | **Base** | voice cloned from the wav (torch backend only) |
+| `clone` (a saved voice name, or a path to a reference wav) | **Base** | voice cloned from the wav — **`instruct` and `[tags]` are ignored** |
 
 So to add emotional speech you just put `[tags]` in the text and keep one `instruct` as the
-base voice. See `references/emotion-tags.md` (portable — paste it into any app or LLM prompt).
+base voice. See `references/emotion-tags.md` (portable — paste it into any app or LLM prompt),
+and `references/voice-recipes.md` for **which mode to pick per use case, ready-to-use
+`instruct` recipes (incl. Rioplatense), and what makes a clone reference good or useless**.
 
 ## Minimal request
 
@@ -91,7 +93,7 @@ open("out.wav", "wb").write(r.content)
 | `language` | string | `Spanish` | English, Spanish, Chinese, Japanese, Korean, German, French, Russian, Portuguese, Italian |
 | `instruct` | string | — | **base voice** description (the "system prompt"); English works best |
 | `voice` | string | — | preset speaker name (needs the CustomVoice model) |
-| `clone` | string | — | path to a reference wav → cloning (torch backend only; **disables tags**) |
+| `clone` | string | — | saved voice name (`qvox voice add`) or path to a reference wav → cloning (**disables `instruct` and tags**) |
 | `temperature` | number | `0.7` | |
 | `seed` | int | `1234` | fixed seed keeps the voice stable across tagged segments |
 | `split` | bool | `true` | split long text by sentence (avoids EOS runaway) |
@@ -113,9 +115,22 @@ after the engine starts pays a one-time model-load cost (shows up in `X-QVox-Loa
 - **Keep ONE `instruct`** for the whole request — it's the base voice carried across every tagged
   segment. The seed keeps it from drifting. Don't change voice per segment; change emotion.
 - **Tag scope**: a `[tag]` applies until the next tag. Unknown tags fall back to the base voice.
-- **Cloning is torch-only.** On Apple Silicon (mlx backend) `clone` errors; switch with
-  `qvox config set engine.backend torch`.
+- **Cloning works on BOTH backends.** The mlx backend does in-context cloning (`feat/mlx-cloning`);
+  it does not error on Apple Silicon. Verified on mlx.
+- **Cloning ignores `instruct` — you cannot direct a cloned voice.** Both backends branch on
+  `if clone:` first and never forward `instruct` to the model (`torch_backend.py` / `mlx_backend.py`
+  → `synth`). Asking a clone to sound "energetic" or "like a narrator" does nothing: **the delivery
+  comes entirely from the reference recording.** To change the tone, change the reference — see
+  `references/voice-recipes.md`.
+- **`ref_text` is accepted but undocumented, and is not a free win.** Passing what the reference
+  says is meant to speed delivery up. Measured on a Rioplatense reference it made the output
+  *slower* (6.00s vs 5.76s for the same line) and audibly worse. A/B it before adopting it.
+- **The output is ~25 dB too quiet to ship.** Raw clone output measured mean −44 dB / peak −30 dB.
+  Always normalize before mounting it in a video:
+  `ffmpeg -i raw.wav -af "loudnorm=I=-16:TP=-1.5:LRA=11" -ar 24000 -ac 1 out.wav`
 - **Engine warm-up**: the first request can be slow (model load); subsequent ones are fast.
+- **Making a clone**: use the `qvox-voice-clone` skill / `qvox voice add` — it prepares the
+  reference (clean, trim, normalise) and saves it under a name you then pass as `clone`.
 
 ## Discover what's available at runtime
 

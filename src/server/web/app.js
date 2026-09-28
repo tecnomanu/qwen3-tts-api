@@ -57,13 +57,34 @@ async function refresh() {
 
 async function renderVoices() {
   try {
-    const { voices } = await (await api('/v1/voices')).json();
+    const { voices, cloned } = await (await api('/v1/voices')).json();
+    renderCloned(cloned || []);
     const sel = $('voice'); const cur = sel.value;
     const list = voices || [];
     const none = list.length ? '— none (use base voice) —' : '— none · CustomVoice not installed —';
     sel.innerHTML = `<option value="">${none}</option>` + list.map((v) => `<option>${v}</option>`).join('');
     sel.value = cur;
   } catch { /* ignore */ }
+}
+
+// Saved voices (qvox voice add). "Use" fills the clone field with the name,
+// which the API resolves to the reference wav.
+function renderCloned(list) {
+  const box = $('cloned');
+  if (!list.length) {
+    box.innerHTML = '<span class="muted">No voices yet.</span>';
+    return;
+  }
+  box.innerHTML = list.map((v) => `
+    <div class="row" style="align-items:center;gap:8px;margin:4px 0">
+      <span class="grow"><b>${v.name}</b> <span class="muted small">${v.duration ? v.duration + ' s' : ''} ${v.verdict || ''}</span></span>
+      <button class="ghost small" data-use-voice="${v.name}"><i class="ph ph-user-sound"></i> Use</button>
+    </div>`).join('');
+  box.querySelectorAll('[data-use-voice]').forEach((b) => b.addEventListener('click', () => {
+    $('clone').value = b.dataset.useVoice;
+    $('clone').dispatchEvent(new Event('input'));
+    $('clone').scrollIntoView({ behavior: 'smooth', block: 'center' });
+  }));
 }
 
 let dl = null; // active download state

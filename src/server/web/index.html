@@ -62,8 +62,8 @@
         </div>
         <p class="muted">Emotion is set per segment with the [tags] above. The base voice + a fixed seed keep the same voice.</p>
         <div class="row">
-          <label class="grow">Clone (path to a reference wav, optional)
-            <input id="clone" placeholder="/path/to/reference_voice.wav" /></label>
+          <label class="grow">Clone (a saved voice name, or a path to a reference wav — optional)
+            <input id="clone" placeholder="ana  or  /path/to/reference_voice.wav" /></label>
         </div>
         <div class="gen-row">
           <button id="speak"><i class="ph ph-waveform"></i> Generate</button>
@@ -96,6 +96,13 @@
 
     <!-- sidebar -->
     <aside class="side">
+      <section class="card" id="cloned-card">
+        <h2>Cloned voices</h2>
+        <div id="cloned" class="kv">—</div>
+        <p class="muted small">Add one from any recording: <code>qvox voice add &lt;name&gt; &lt;file&gt;</code></p>
+        <a class="ghost small" href="/guide.html"><i class="ph ph-book-open"></i> How to clone a voice</a>
+      </section>
+
       <section class="card" id="status-card">
         <h2>Status</h2>
         <div id="status" class="kv">loading…</div>
@@ -148,7 +155,7 @@
   <footer class="footer">
     <span class="foot-left"><b>QVox</b> <span id="foot-ver"></span> · Open source · MIT license</span>
     <span class="foot-right">
-      <span class="foot-by">&copy; <b>tecno.manu</b> (Manuel Bruña)</span>
+      <span class="foot-by">&copy; <b>tecno.ana</b> (Manuel Bruña)</span>
       <a class="foot-coffee" href="https://cafecito.app/tecnomanu" target="_blank" rel="noopener">
         <i class="ph ph-coffee"></i> Buy me a coffee / Invitame un café
       </a>

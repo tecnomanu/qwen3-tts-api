@@ -3,6 +3,7 @@
 const fs = require('fs');
 const path = require('path');
 const { EngineManager } = require('../../engine/EngineManager');
+const voices = require('../../core/voices');
 
 module.exports = async function speak(ctx, { positionals, flags }) {
   const { config, logger, paths } = ctx;
@@ -24,7 +25,11 @@ module.exports = async function speak(ctx, { positionals, flags }) {
     temperature: flags.temp ? Number(flags.temp) : cfg.tts.temperature,
   };
   if (flags.instruct) body.instruct = flags.instruct;
-  if (flags.clone) body.clone = path.resolve(flags.clone); // path to reference wav
+  if (flags.clone) {
+    // a saved voice's name (qvox voice add) or a path to a reference wav
+    const saved = voices.resolve(paths, flags.clone);
+    body.clone = saved !== flags.clone ? saved : path.resolve(flags.clone);
+  }
   if (flags.voice) body.voice = flags.voice;
 
   const out = path.resolve(flags.out || flags.o || path.join(paths.outDir, 'speak.wav'));

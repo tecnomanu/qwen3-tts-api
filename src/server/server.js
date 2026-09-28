@@ -12,6 +12,8 @@ const { checkAuth } = require('./middleware/auth');
 const routes = require('./routes/api');
 
 const WEB_DIR = path.join(__dirname, 'web');
+// The package's own guides (docs/*.md), read by the panel's guide page.
+const DOCS_DIR = path.join(__dirname, '..', '..', 'docs');
 const MIME = {
   '.html': 'text/html; charset=utf-8',
   '.js': 'text/javascript; charset=utf-8',
@@ -20,6 +22,7 @@ const MIME = {
   '.svg': 'image/svg+xml',
   '.png': 'image/png',
   '.ico': 'image/x-icon',
+  '.md': 'text/markdown; charset=utf-8',
 };
 
 const helpers = {
@@ -48,8 +51,11 @@ const helpers = {
 function serveStatic(req, res) {
   let urlPath = decodeURIComponent((req.url.split('?')[0] || '/'));
   if (urlPath === '/') urlPath = '/index.html';
-  const filePath = path.join(WEB_DIR, path.normalize(urlPath).replace(/^(\.\.[/\\])+/, ''));
-  if (!filePath.startsWith(WEB_DIR) || !fs.existsSync(filePath) || fs.statSync(filePath).isDirectory()) {
+  // /docs/<Name>.md — a plain file name only, so nothing outside docs/ is reachable.
+  const doc = urlPath.match(/^\/docs\/([A-Za-z0-9_-]+\.md)$/);
+  const base = doc ? DOCS_DIR : WEB_DIR;
+  const filePath = doc ? path.join(DOCS_DIR, doc[1]) : path.join(WEB_DIR, path.normalize(urlPath).replace(/^(\.\.[/\\])+/, ''));
+  if (!filePath.startsWith(base) || !fs.existsSync(filePath) || fs.statSync(filePath).isDirectory()) {
     res.writeHead(404, { 'content-type': 'text/plain' });
     return res.end('404');
   }

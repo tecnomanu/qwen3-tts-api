@@ -15,6 +15,7 @@ const COMMANDS = {
   restart: 'Restart the inference engine',
   config: 'View/edit configuration: qvox config get|set|path|edit',
   models: 'Manage models: qvox models list|download|remove|path',
+  voice: 'Cloned voices: qvox voice add|test|list|remove|path (see docs/VOICE-CLONING.md)',
   update: 'Update qvox (npm) and restart the daemon',
   version: 'Show the version',
   help: 'Show this help',
@@ -68,6 +69,8 @@ Examples:
   ${c} serve --host 0.0.0.0 --port 5111
   ${c} speak "Hi there" --voice aiden --out demo.wav
   ${c} models list
+  ${c} voice add ana ~/Downloads/voice-note.ogg --consent
+  ${c} voice test ana
   ${c} config set apiKey my-secret-key
 
 Data/config in: ${brand.dataDir}

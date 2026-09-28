@@ -4,6 +4,17 @@
  * helpers: { sendJson, readJson, sendBuffer }
  * Routes /v1/* and /api/* are protected with the api key (see server.js).
  */
+const voices = require('../../core/voices');
+
+/**
+ * `clone` may name a saved voice (qvox voice add) instead of a wav path; the
+ * engine only understands paths.
+ */
+function withVoice(ctx, body) {
+  if (body && typeof body.clone === 'string') body.clone = voices.resolve(ctx.paths, body.clone);
+  return body;
+}
+
 module.exports = {
   'GET /health': async (ctx, engine, req, res, h) => {
     const up = await engine.isUp();
@@ -12,7 +23,7 @@ module.exports = {
 
   // OpenAI-compatible: generate audio (wav)
   'POST /v1/audio/speech': async (ctx, engine, req, res, h) => {
-    const body = await h.readJson(req);
+    const body = withVoice(ctx, await h.readJson(req));
     if (!body.input && !body.text) return h.sendJson(res, 400, { error: "missing 'input'" });
     if (!(await engine.isUp())) {
       if (ctx.config.get('engine.autostart')) await engine.start();
@@ -36,7 +47,7 @@ module.exports = {
   // chunk on the wire at ~350 ms here. Nothing is buffered on the way through —
   // buffering would give back the very latency the route exists to remove.
   'POST /v1/audio/speech/stream': async (ctx, engine, req, res, h) => {
-    const body = await h.readJson(req);
+    const body = withVoice(ctx, await h.readJson(req));
     if (!body.input && !body.text) return h.sendJson(res, 400, { error: "missing 'input'" });
     if (!(await engine.isUp())) {
       if (ctx.config.get('engine.autostart')) await engine.start();
@@ -69,7 +80,7 @@ module.exports = {
   // the engine like the speech route does, so a client can call this first and
   // pay the whole cold path — process start plus decompression — up front.
   'POST /v1/warmup': async (ctx, engine, req, res, h) => {
-    const body = await h.readJson(req).catch(() => ({}));
+    const body = withVoice(ctx, await h.readJson(req).catch(() => ({})));
     if (!(await engine.isUp())) {
       if (ctx.config.get('engine.autostart')) await engine.start();
       else return h.sendJson(res, 503, { error: 'engine is down' });
@@ -89,12 +100,15 @@ module.exports = {
     h.sendJson(res, 200, await engine.bridge.listModels());
   },
 
+  // Preset speakers from the engine, plus the cloned voices saved on disk
+  // (`cloned`), which work whether or not the engine is up.
   'GET /v1/voices': async (ctx, engine, req, res, h) => {
-    if (!(await engine.isUp())) return h.sendJson(res, 200, { voices: [] });
+    const cloned = voices.list(ctx.paths).map(({ name, duration, created, verdict }) => ({ name, duration, created, verdict }));
+    if (!(await engine.isUp())) return h.sendJson(res, 200, { voices: [], cloned });
     try {
-      h.sendJson(res, 200, await engine.bridge.listVoices());
+      h.sendJson(res, 200, { ...(await engine.bridge.listVoices()), cloned });
     } catch {
-      h.sendJson(res, 200, { voices: [] });
+      h.sendJson(res, 200, { voices: [], cloned });
     }
   },
 

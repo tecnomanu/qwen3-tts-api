@@ -35,7 +35,7 @@
   ],
   "scripts": {
     "start": "node bin/qvox.js serve",
-    "test": "node --test test/",
+    "test": "node --test",
     "release": "node scripts/release.js"
   },
   "dependencies": {}

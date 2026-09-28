@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>QVox · clone a voice</title>
+  <link rel="icon" type="image/png" href="/favicon.png" />
+  <link rel="stylesheet" href="/styles.css" />
+  <script src="https://unpkg.com/@phosphor-icons/web@2.1.1"></script>
+  <style>
+    .guide { max-width: 860px; margin: 0 auto; padding: 28px 22px 64px; }
+    .guide h1 { font-size: 28px; margin: 0 0 8px; }
+    .guide h2 { font-size: 21px; margin: 36px 0 10px; padding-top: 14px; border-top: 1px solid var(--line); }
+    .guide h3 { font-size: 16px; margin: 24px 0 8px; color: var(--accent2); }
+    .guide p, .guide li { color: var(--text); }
+    .guide li { margin: 4px 0; }
+    .guide a { color: var(--accent); }
+    .guide code { background: var(--panel2); border: 1px solid var(--line); border-radius: 5px; padding: 1px 5px; font-size: 13px; }
+    .guide pre { background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius); padding: 14px 16px; overflow-x: auto; }
+    .guide pre code { background: none; border: 0; padding: 0; font-size: 13px; line-height: 1.55; }
+    .guide blockquote { margin: 14px 0; padding: 12px 16px; border-left: 3px solid var(--accent2); background: var(--panel); border-radius: 0 var(--radius) var(--radius) 0; }
+    .guide table { width: 100%; border-collapse: collapse; margin: 12px 0; font-size: 14px; }
+    .guide th, .guide td { border: 1px solid var(--line); padding: 8px 10px; text-align: left; vertical-align: top; }
+    .guide th { background: var(--panel2); }
+    .back { color: var(--muted); text-decoration: none; font-size: 14px; }
+    .back:hover { color: var(--text); }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="brand">
+      <img src="/logo.png" class="logo" alt="QVox" />
+      <span class="tag">guide</span>
+    </div>
+    <a class="back" href="/"><i class="ph ph-arrow-left"></i> back to the panel</a>
+  </header>
+
+  <article class="guide" id="guide"><p class="muted">Loading…</p></article>
+
+  <script>
+    // A deliberately small Markdown renderer: headings, paragraphs, lists,
+    // quotes, fenced code, tables, **bold**, `code` and [links](url). The guide
+    // lives once, in docs/VOICE-CLONING.md, and this page only displays it.
+    const esc = (s) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+    const inline = (s) => esc(s)
+      .replace(/`([^`]+)`/g, '<code>$1</code>')
+      .replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>')
+      .replace(/\*([^*\s][^*]*)\*/g, '<em>$1</em>')
+      .replace(/\[([^\]]+)\]\((https?:\/\/[^)\s]+)\)/g, '<a href="$2" target="_blank" rel="noopener">$1</a>');
+
+    function render(md) {
+      const lines = md.replace(/\r/g, '').split('\n');
+      const out = [];
+      for (let i = 0; i < lines.length; ) {
+        const line = lines[i];
+        if (line.startsWith('```')) {
+          const code = [];
+          for (i++; i < lines.length && !lines[i].startsWith('```'); i++) code.push(lines[i]);
+          out.push(`<pre><code>${esc(code.join('\n'))}</code></pre>`);
+          i++;
+        } else if (/^#{1,3} /.test(line)) {
+          const n = line.match(/^#+/)[0].length;
+          out.push(`<h${n}>${inline(line.slice(n + 1))}</h${n}>`);
+          i++;
+        } else if (line.startsWith('|')) {
+          const rows = [];
+          for (; i < lines.length && lines[i].startsWith('|'); i++) rows.push(lines[i]);
+          const cells = (r) => r.split('|').slice(1, -1).map((c) => c.trim());
+          const body = rows.slice(2).map((r) => `<tr>${cells(r).map((c) => `<td>${inline(c)}</td>`).join('')}</tr>`).join('');
+          out.push(`<table><thead><tr>${cells(rows[0]).map((c) => `<th>${inline(c)}</th>`).join('')}</tr></thead><tbody>${body}</tbody></table>`);
+        } else if (line.startsWith('>')) {
+          const q = [];
+          for (; i < lines.length && lines[i].startsWith('>'); i++) q.push(lines[i].replace(/^>\s?/, ''));
+          out.push(`<blockquote>${inline(q.join(' '))}</blockquote>`);
+        } else if (/^- /.test(line)) {
+          const items = [];
+          for (; i < lines.length && (/^- /.test(lines[i]) || /^\s{2,}\S/.test(lines[i])); i++) {
+            if (/^- /.test(lines[i])) items.push(lines[i].slice(2));
+            else items[items.length - 1] += ' ' + lines[i].trim();
+          }
+          out.push(`<ul>${items.map((t) => `<li>${inline(t)}</li>`).join('')}</ul>`);
+        } else if (line.trim() === '') {
+          i++;
+        } else {
+          const p = [];
+          for (; i < lines.length && lines[i].trim() !== '' && !/^(#|>|- |\||```)/.test(lines[i]); i++) p.push(lines[i]);
+          out.push(`<p>${inline(p.join(' '))}</p>`);
+        }
+      }
+      return out.join('\n');
+    }
+
+    fetch('/docs/VOICE-CLONING.md')
+      .then((r) => (r.ok ? r.text() : Promise.reject(new Error(r.status))))
+      .then((md) => { document.getElementById('guide').innerHTML = render(md); })
+      .catch(() => { document.getElementById('guide').innerHTML = '<p>Could not load the guide. It is also in docs/VOICE-CLONING.md.</p>'; });
+  </script>
+</body>
+</html>

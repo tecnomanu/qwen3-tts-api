@@ -11,22 +11,35 @@ network (`0.0.0.0`, VPS) with an optional **API key**. No database: everything i
 > The command is **`qvox`**. The name lives in a single constant (`src/brand.js`) — change it
 > there and it propagates to the command, data folder (`~/.qvox`), env vars and panel.
 
+## Requirements — check before installing
+
+QVox runs real models on your machine. Know before you start whether yours is up to it:
+
+| | Recommended | Works, slowly | Not enough |
+|---|---|---|---|
+| Hardware | Apple Silicon (M1 or newer) or an NVIDIA GPU with 8 GB+ VRAM | Any other CPU (about 10x slower than real time) | — |
+| Memory | 16 GB RAM | 8 GB | less than 8 GB |
+| Disk | 15 GB free for the models | — | less than 15 GB |
+| Software | Node 18+, [uv](https://docs.astral.sh/uv/), [ffmpeg](https://ffmpeg.org/download.html) | — | no Node 18 or no uv |
+
+`qvox setup` runs these checks and stops, with the reason, on a machine that cannot run it —
+before anything is downloaded. For reference: on an M4 Pro (24 GB) a cloned voice renders a
+25 s line in about 17 s.
+
 ## Install
 
 ```bash
 npm install -g qwen3-tts-api      # installs the `qvox` command
-qvox setup                        # creates config + folders, checks deps
+qvox setup                        # checks the requirements, creates config + folders
 qvox serve                        # starts API + panel at http://127.0.0.1:5111
 ```
-
-Requirements: **Node ≥ 18** and **[uv](https://docs.astral.sh/uv/)** (manages Python/models on its own).
-`ffmpeg` optional (audio conversion).
 
 ## Quick usage
 
 ```bash
 qvox speak "Hi there, how are you?" --voice aiden --out demo.wav
-qvox speak "Hello" --clone /path/to/voice.wav --out clone.wav   # clone a voice
+qvox voice add ana voice-note.ogg --consent                   # turn a recording into a voice
+qvox speak "Hello" --clone ana --out clone.wav                 # speak with it
 qvox serve --host 0.0.0.0 --port 5111                           # expose on the network
 qvox config set apiKey my-key                                   # protect with an api key
 qvox models list
@@ -37,7 +50,7 @@ qvox status
 
 | Platform | Backend | Notes |
 |---|---|---|
-| Mac (Apple Silicon) | **mlx** | Fast (~0.85x real-time). Cloning not supported yet (mlx-audio bug). |
+| Mac (Apple Silicon) | **mlx** | Fast (~0.85x real-time). Supports cloning. |
 | NVIDIA / ROCm / CPU | **torch** | Universal, **supports cloning**. Slower on MPS. |
 
 Force it: `qvox config set engine.backend torch`.
@@ -73,11 +86,32 @@ decoder carries 25 frames of left context across the seams. MLX backend only.
 
 See [docs/API.md](docs/API.md), [docs/CLI.md](docs/CLI.md), [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
 
-## Agent skill (integrate it elsewhere)
+## Clone a voice
 
-`skills/qvox-tts/` is a Claude Code skill that teaches an agent how to call this API and use the
-inline `[emotion]` tags when building **other** apps. Install it with
-`cp -r skills/qvox-tts ~/.claude/skills/`. The portable tag reference
+Any recording — a phone voice note, a video, a studio take, a URL — becomes a voice you use by
+name:
+
+```bash
+qvox voice add ana ~/Downloads/voice-note.ogg   # measure, clean, trim to 25-40 s, normalise
+qvox voice test ana                             # hear it
+```
+
+`voice add` tells you whether the result will clone well (GOOD / USABLE / POOR) and what to fix
+if not. Then pass `"clone": "ana"` to the API, `--clone ana` to `speak`, or pick it in the
+panel. How to get a good recording, texts to read aloud, and what each warning means:
+**[docs/VOICE-CLONING.md](docs/VOICE-CLONING.md)** — also in the panel at `/guide.html`.
+
+Only clone your own voice or one whose owner gave you permission; `voice add` asks you to
+confirm it.
+
+## Agent skills
+
+- `skills/qvox-voice-clone/` — installs QVox and clones a voice from a recording, step by step
+  (requirements check, consent, preparing and testing the reference).
+- `skills/qvox-tts/` — teaches an agent how to call this API and use the inline `[emotion]` tags
+  when building **other** apps.
+
+Install either with `cp -r skills/<name> ~/.claude/skills/`. The portable tag reference
 ([skills/qvox-tts/references/emotion-tags.md](skills/qvox-tts/references/emotion-tags.md)) is
 self-contained — paste it into any prompt or LLM context.
 
